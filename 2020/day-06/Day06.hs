@@ -23,7 +23,7 @@ main = do
             print $ part2 input
 
 part1 :: [N.NonEmpty (S.Set Char)] -> Int
-part1 = fmap (S.unions .> S.size) .> sum
+part1 = fmap (N.toList .> S.unions .> S.size) .> sum
 
 part2 :: [N.NonEmpty (S.Set Char)] -> Int
 part2 = fmap (intersections .> S.size) .> sum
