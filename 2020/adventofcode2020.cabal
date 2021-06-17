@@ -30,6 +30,7 @@ common common-lib-options
     , list-t
     , megaparsec
     , mtl
+    , named
     , nonempty-containers
     , optics
     , parser-combinators
@@ -74,6 +75,7 @@ library
     , day-22
     , day-23
     , day-24
+    , day-25
   exposed-modules:
       Day01
     , Day02
@@ -98,6 +100,7 @@ library
     , Day22
     , Day23
     , Day24
+    , Day25
 
 executable day-01
   import: common-exe-options
@@ -212,4 +215,9 @@ executable day-23
 executable day-24
   import: common-exe-options
   mixins: adventofcode2020 (Day24 as Day)
+  main-is: Main.hs
+
+executable day-25
+  import: common-exe-options
+  mixins: adventofcode2020 (Day25 as Day)
   main-is: Main.hs
