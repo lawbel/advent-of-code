@@ -21,10 +21,6 @@ The way this repository is set up hits a nice sweet spot:
   `cabal run day-XX` (or `stack run day-XX`) to run the compiled executable
   for each day.
 
-(Note: we have the stack resolver set as a nightly snapshot, rather than a LTS
-snapshot, because at time of writing there wasn't yet an LTS release supporting
-GHC-8.10.)
-
 ## Approach To The Challenges
 
 In terms of approaching each day, I'm not worrying too much about optimizing
