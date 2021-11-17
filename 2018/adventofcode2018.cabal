@@ -10,9 +10,9 @@ license-file: LICENSE
 common common-lang-options
     default-language: Haskell2010
     default-extensions:
-          BinaryLiterals
-        , ImportQualifiedPost
-        , NumericUnderscores
+        BinaryLiterals
+      , ImportQualifiedPost
+      , NumericUnderscores
 
 common common-exe-options
     import: common-lang-options
@@ -24,41 +24,35 @@ common common-exe-options
 
 common common-test-options
     import: common-lang-options
+    ghc-options: -Wall -O2
+    hs-source-dirs: run
     build-depends:
         base
       , adventofcode2018-tests
-    hs-source-dirs: spec
-
-common common-source-dirs
-    hs-source-dirs:
-        day-01
 
 library
-    import:
-        common-lang-options
-      , common-source-dirs
+    import: common-lang-options
     ghc-options: -Wall
+    hs-source-dirs: src
     build-depends:
         base ^>=4.14
     exposed-modules:
         Day01
 
 library adventofcode2018-tests
-    import:
-        common-lang-options
-      , common-source-dirs
+    import: common-lang-options
     ghc-options: -Wall -O2
+    hs-source-dirs: spec
     build-depends:
         base
       , adventofcode2018
-      , tasty
     exposed-modules:
         Test01
 
 executable day-01
     import: common-exe-options
     mixins: adventofcode2018 (Day01 as Day)
-    main-is: Main.hs
+    main-is: Run.hs
 
 test-suite test-01
     import: common-test-options
