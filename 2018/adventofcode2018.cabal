@@ -1,10 +1,11 @@
-cabal-version: 2.4
+cabal-version: 3.0
 
 name: adventofcode2018
 version: 0.1.0.0
 author: rvLMdE7
 build-type: Simple
 license: BSD-3-Clause
+license-file: LICENSE
 
 common common-lang-options
     default-language: Haskell2010
@@ -15,22 +16,52 @@ common common-lang-options
 
 common common-exe-options
     import: common-lang-options
+    ghc-options: -Wall -O2
     build-depends:
         base
       , adventofcode2018
     hs-source-dirs: run
 
-library
+common common-test-options
     import: common-lang-options
+    build-depends:
+        base
+      , adventofcode2018-tests
+    hs-source-dirs: spec
+
+common common-source-dirs
+    hs-source-dirs:
+        day-01
+
+library
+    import:
+        common-lang-options
+      , common-source-dirs
     ghc-options: -Wall
     build-depends:
         base ^>=4.14
-    hs-source-dirs:
-        day-01
     exposed-modules:
         Day01
+
+library adventofcode2018-tests
+    import:
+        common-lang-options
+      , common-source-dirs
+    ghc-options: -Wall -O2
+    build-depends:
+        base
+      , adventofcode2018
+      , tasty
+    exposed-modules:
+        Test01
 
 executable day-01
     import: common-exe-options
     mixins: adventofcode2018 (Day01 as Day)
     main-is: Main.hs
+
+test-suite test-01
+    import: common-test-options
+    mixins: adventofcode2018-tests (Test01 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
