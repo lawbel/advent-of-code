@@ -1,0 +1,36 @@
+cabal-version: 2.4
+
+name: adventofcode2018
+version: 0.1.0.0
+author: rvLMdE7
+build-type: Simple
+license: BSD-3-Clause
+
+common common-lang-options
+    default-language: Haskell2010
+    default-extensions:
+          BinaryLiterals
+        , ImportQualifiedPost
+        , NumericUnderscores
+
+common common-exe-options
+    import: common-lang-options
+    build-depends:
+        base
+      , adventofcode2018
+    hs-source-dirs: run
+
+library
+    import: common-lang-options
+    ghc-options: -Wall
+    build-depends:
+        base ^>=4.14
+    hs-source-dirs:
+        day-01
+    exposed-modules:
+        Day01
+
+executable day-01
+    import: common-exe-options
+    mixins: adventofcode2018 (Day01 as Day)
+    main-is: Main.hs
