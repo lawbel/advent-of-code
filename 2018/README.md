@@ -19,5 +19,5 @@ Doing the Advent of Code 2018 challenges in Haskell.
 > cabal build
 > cabal repl adventofcode2018
 > cabal run day-01
-> cabal test test-01
+> cabal run test-01
 ```
