@@ -36,6 +36,10 @@ library
     hs-source-dirs: src
     build-depends:
         base ^>=4.14
+      , bytestring
+      , flow
+      , megaparsec
+      , text
     other-modules:
         Common
     exposed-modules:
@@ -48,6 +52,9 @@ library adventofcode2018-tests
     build-depends:
         base
       , adventofcode2018
+      , megaparsec
+      , tasty
+      , tasty-hunit
     exposed-modules:
         Test01
 
