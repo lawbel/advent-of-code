@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Test01 where
 
@@ -9,6 +10,7 @@ import Test.Tasty.HUnit qualified as Tasty.HUnit
 import Text.Megaparsec qualified as Par
 
 import Day01 qualified
+import Flow ((.>))
 
 
 main :: IO ()
@@ -18,7 +20,7 @@ tests :: TestTree
 tests = Tasty.testGroup "Tests" [unitTests]
 
 unitTests :: TestTree
-unitTests = Tasty.testGroup "Unit tests" [parseTests]
+unitTests = Tasty.testGroup "Unit tests" [parseTests, logicTests]
 
 parseTests :: TestTree
 parseTests = Tasty.testGroup "Parse tests"
@@ -38,3 +40,13 @@ parseTests = Tasty.testGroup "Parse tests"
         Par.parseMaybe Day01.parseFreqChangesLines "+3\n+13\n+4\n-2"
             @?= Just [3, 13, 4, -2]
     ]
+
+logicTests :: TestTree
+logicTests = Tasty.testGroup "Logic tests"
+    [ Tasty.HUnit.testCase "partial sums" $
+        Day01.partialSums @Int [1, -2, 3, 1] @?= [0, 1, -1, 2, 3]
+    , Tasty.HUnit.testCase "loop 1" $
+        Day01.firstRepeat (makeLoop [1, -2, 3, 1]) @?= Just @Int 2
+    ]
+  where
+    makeLoop = Day01.partialSums .> cycle

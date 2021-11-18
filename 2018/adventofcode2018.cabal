@@ -40,6 +40,7 @@ library
     build-depends:
         base ^>=4.14
       , bytestring
+      , containers
       , flow
       , megaparsec
       , text
@@ -56,6 +57,7 @@ library adventofcode2018-tests
     build-depends:
         base
       , adventofcode2018
+      , flow
       , megaparsec
       , tasty
       , tasty-hunit

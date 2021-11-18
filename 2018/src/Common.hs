@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Common where
 
 import Control.Monad ((>=>))
@@ -7,8 +9,9 @@ import Data.Text (Text)
 import Data.Text.Encoding qualified as Text.Enc
 import Data.Void (Void)
 import Flow ((.>))
-import Paths_adventofcode2018 (getDataFileName)
 import Text.Megaparsec qualified as Par
+
+import Paths_adventofcode2018 (getDataFileName)
 
 
 readFileUtf8 :: FilePath -> IO Text
@@ -21,3 +24,8 @@ type Parser a = Par.Parsec Void Text a
 
 runParser :: Parser a -> String -> Text -> Either String a
 runParser parser desc = Par.parse parser desc .> first Par.errorBundlePretty
+
+maybeToEither :: a -> Maybe b -> Either a b
+maybeToEither def = \case
+    Nothing -> Left def
+    Just x  -> Right x
