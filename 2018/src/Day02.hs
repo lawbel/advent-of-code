@@ -1,8 +1,11 @@
 module Day02 where
 
 import Control.Applicative (some)
+import Control.Monad (guard)
+import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Maybe (listToMaybe)
 import Data.Text (Text)
 import Flow ((<.))
 import Text.Megaparsec qualified as Par
@@ -34,10 +37,28 @@ checksum input = numExactly 2 input * numExactly 3 input
 part1 :: [String] -> Int
 part1 = checksum
 
+numPairwiseNeq :: Eq a => [a] -> [a] -> Int
+numPairwiseNeq xs ys = length $ filter neq $ zip xs ys
+  where
+    neq = uncurry (/=)
+
+filterPairwiseEq :: Eq a => [a] -> [a] -> [a]
+filterPairwiseEq xs ys = map fst $ filter eq $ zip xs ys
+  where
+    eq = uncurry (==)
+
+part2 :: [String] -> Either String String
+part2 inputs = maybeToEither "no matches" $ listToMaybe $ do
+    input1 <- inputs
+    input2 <- inputs
+    guard $ numPairwiseNeq input1 input2 == 1
+    pure $ filterPairwiseEq input1 input2
+
 main :: IO ()
 main = do
     text <- readInputFileUtf8 "input/day-02.txt"
     case getInput text of
         Left err -> putStrLn err
         Right input -> do
-            print $ part1 input
+            part1 input & print
+            part2 input & either (mappend "error: ") id & putStrLn

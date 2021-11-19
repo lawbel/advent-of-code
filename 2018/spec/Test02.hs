@@ -35,7 +35,11 @@ parseTests = Tasty.testGroup "parse tests"
     ]
 
 logicTests :: TestTree
-logicTests = Tasty.testGroup "logic tests" [counterTests, checksumTests]
+logicTests = Tasty.testGroup "logic tests"
+    [ counterTests
+    , checksumTests
+    , pairwiseTests
+    ]
 
 counterTests :: TestTree
 counterTests = Tasty.testGroup "counter tests"
@@ -92,4 +96,14 @@ checksumTests = Tasty.testGroup "checksum tests"
                 , "ababab"
                 ]
         in  Day02.checksum input @?= 12
+    ]
+
+pairwiseTests :: TestTree
+pairwiseTests = Tasty.testGroup "pairwise tests"
+    [ Tasty.HUnit.testCase "example 1" $
+        Day02.numPairwiseNeq "abcde" "axcye" @?= 2
+    , Tasty.HUnit.testCase "example 2" $
+        Day02.numPairwiseNeq "fghij" "fguij" @?= 1
+    , Tasty.HUnit.testCase "example 3" $
+        Day02.filterPairwiseEq "fghij" "fguij" @?= "fgij"
     ]
