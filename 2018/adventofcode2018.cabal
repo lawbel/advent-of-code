@@ -19,10 +19,10 @@ common common-lang-options
 common common-exe-options
     import: common-lang-options
     ghc-options: -Wall -O2
+    hs-source-dirs: run
     build-depends:
         base
       , adventofcode2018
-    hs-source-dirs: run
 
 common common-test-options
     import: common-lang-options
@@ -32,10 +32,8 @@ common common-test-options
         base
       , adventofcode2018-tests
 
-library
+common common-dependencies
     import: common-lang-options
-    ghc-options: -Wall
-    hs-source-dirs: src
     build-depends:
         base ^>=4.14
       , bytestring
@@ -43,6 +41,13 @@ library
       , flow
       , megaparsec
       , text
+
+library
+    import:
+          common-lang-options
+        , common-dependencies
+    ghc-options: -Wall
+    hs-source-dirs: src
     other-modules:
         Common
     exposed-modules:
@@ -50,14 +55,13 @@ library
       , Day01
 
 library adventofcode2018-tests
-    import: common-lang-options
+    import:
+          common-lang-options
+        , common-dependencies
     ghc-options: -Wall -O2
     hs-source-dirs: spec
     build-depends:
-        base
-      , adventofcode2018
-      , flow
-      , megaparsec
+        adventofcode2018
       , tasty
       , tasty-hunit
     exposed-modules:
