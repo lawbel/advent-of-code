@@ -53,6 +53,7 @@ library
     exposed-modules:
         Paths_adventofcode2018
       , Day01
+      , Day02
 
 library adventofcode2018-tests
     import:
@@ -66,14 +67,26 @@ library adventofcode2018-tests
       , tasty-hunit
     exposed-modules:
         Test01
+      , Test02
 
 executable day-01
     import: common-exe-options
     mixins: adventofcode2018 (Day01 as Day)
     main-is: Run.hs
 
+executable day-02
+    import: common-exe-options
+    mixins: adventofcode2018 (Day02 as Day)
+    main-is: Run.hs
+
 test-suite test-01
     import: common-test-options
     mixins: adventofcode2018-tests (Test01 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-02
+    import: common-test-options
+    mixins: adventofcode2018-tests (Test02 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
