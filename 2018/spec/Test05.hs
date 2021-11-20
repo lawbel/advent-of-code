@@ -5,6 +5,7 @@
 module Test05 where
 
 import Data.Char (isLetter)
+import Data.List qualified as List
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Test.Tasty (TestTree)
@@ -37,7 +38,11 @@ propertyTests = Tasty.testGroup "properties"
     ]
 
 unitTests :: TestTree
-unitTests = Tasty.testGroup "unit tests" [triggerTests, reactTests]
+unitTests = Tasty.testGroup "unit tests"
+    [ triggerTests
+    , reactTests
+    , reduceTests
+    ]
 
 triggerTests :: TestTree
 triggerTests = Tasty.testGroup "trigger tests"
@@ -50,6 +55,31 @@ triggerTests = Tasty.testGroup "trigger tests"
 reactTests :: TestTree
 reactTests = Tasty.testGroup "react tests"
     [ HUnit.testCase "example 1" $ Day05.reactFully poly1 @?= poly4
+    ]
+
+reduceTests :: TestTree
+reduceTests = Tasty.testGroup "reduce tests"
+    [ HUnit.testCase "units" $ List.sort (Day05.units poly1) @?= ['a' .. 'd']
+    , Tasty.testGroup "unit a" $
+        let without = "dbcCCBcCcD"
+        in  [ HUnit.testCase "init" $ Day05.without 'a' poly1 @?= without
+            , HUnit.testCase "result" $ Day05.reactFully without @?= "dbCBcD"
+            ]
+    , Tasty.testGroup "unit b" $
+        let without = "daAcCaCAcCcaDA"
+        in  [ HUnit.testCase "init" $ Day05.without 'b' poly1 @?= without
+            , HUnit.testCase "result" $ Day05.reactFully without @?= "daCAcaDA"
+            ]
+    , Tasty.testGroup "unit c" $
+        let without = "dabAaBAaDA"
+        in  [ HUnit.testCase "init" $ Day05.without 'c' poly1 @?= without
+            , HUnit.testCase "result" $ Day05.reactFully without @?= "daDA"
+            ]
+    , Tasty.testGroup "unit d" $
+        let without = "abAcCaCBAcCcaA"
+        in  [ HUnit.testCase "init" $ Day05.without 'd' poly1 @?= without
+            , HUnit.testCase "result" $ Day05.reactFully without @?= "abCBAc"
+            ]
     ]
 
 poly1 :: Text
