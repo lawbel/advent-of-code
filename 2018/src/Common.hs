@@ -7,6 +7,7 @@ import Data.Bifunctor (first)
 import Data.ByteString qualified as Byt
 import Data.Text (Text)
 import Data.Text.Encoding qualified as Text.Enc
+import Data.Vector qualified as Vec
 import Data.Void (Void)
 import Flow ((.>))
 import Text.Megaparsec qualified as Par
@@ -29,3 +30,12 @@ maybeToEither :: a -> Maybe b -> Either a b
 maybeToEither def = \case
     Nothing -> Left def
     Just x  -> Right x
+
+distinctUnorderedPairs :: [a] -> [(a, a)]
+distinctUnorderedPairs list = do
+    i <- [0 .. n - 1]
+    j <- [0 .. i - 1]
+    pure (vec Vec.! i, vec Vec.! j)
+  where
+    n = length vec
+    vec = Vec.fromList list

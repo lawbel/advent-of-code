@@ -39,8 +39,13 @@ common common-dependencies
       , bytestring
       , containers
       , flow
+      , interpolatedstring-perl6
+      , intervals
+      , lens
+      , linear
       , megaparsec
       , text
+      , vector
 
 library
     import:
@@ -54,6 +59,7 @@ library
         Paths_adventofcode2018
       , Day01
       , Day02
+      , Day03
 
 library adventofcode2018-tests
     import:
@@ -65,9 +71,11 @@ library adventofcode2018-tests
         adventofcode2018
       , tasty
       , tasty-hunit
+      , tasty-quickcheck
     exposed-modules:
         Test01
       , Test02
+      , Test03
 
 executable day-01
     import: common-exe-options
@@ -79,6 +87,11 @@ executable day-02
     mixins: adventofcode2018 (Day02 as Day)
     main-is: Run.hs
 
+executable day-03
+    import: common-exe-options
+    mixins: adventofcode2018 (Day03 as Day)
+    main-is: Run.hs
+
 test-suite test-01
     import: common-test-options
     mixins: adventofcode2018-tests (Test01 as Test)
@@ -88,5 +101,11 @@ test-suite test-01
 test-suite test-02
     import: common-test-options
     mixins: adventofcode2018-tests (Test02 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-03
+    import: common-test-options
+    mixins: adventofcode2018-tests (Test03 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
