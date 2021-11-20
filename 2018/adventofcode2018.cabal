@@ -60,6 +60,7 @@ library
       , Day01
       , Day02
       , Day03
+      , Day05
 
 library adventofcode2018-tests
     import:
@@ -76,6 +77,7 @@ library adventofcode2018-tests
         Test01
       , Test02
       , Test03
+      , Test05
 
 executable day-01
     import: common-exe-options
@@ -90,6 +92,11 @@ executable day-02
 executable day-03
     import: common-exe-options
     mixins: adventofcode2018 (Day03 as Day)
+    main-is: Run.hs
+
+executable day-05
+    import: common-exe-options
+    mixins: adventofcode2018 (Day05 as Day)
     main-is: Run.hs
 
 test-suite test-01
@@ -107,5 +114,11 @@ test-suite test-02
 test-suite test-03
     import: common-test-options
     mixins: adventofcode2018-tests (Test03 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-05
+    import: common-test-options
+    mixins: adventofcode2018-tests (Test05 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
