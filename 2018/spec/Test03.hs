@@ -89,6 +89,8 @@ unitTests = Tasty.testGroup "unit tests"
         Day03.claimToBox exTwo `disjoint` Day03.claimToBox exThree @?= True
     , Tasty.HUnit.testCase "example 4" $
         Day03.conflicts [exOne, exTwo, exThree] @?= [overlap]
+    , Tasty.HUnit.testCase "example 5" $
+        Day03.notOverlapped [exOne, exTwo, exThree] @?= [exThree]
     ]
   where
     overlap = Day03.MkBox{xAxis = 3 ... 5, yAxis = 3 ... 5}

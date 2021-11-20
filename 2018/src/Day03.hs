@@ -42,7 +42,7 @@ instance Ord a => Monoid (Box a) where
 parseSepV2 :: Num a => Parser b -> Parser (V2 a)
 parseSepV2 sep = do
     x <- Par.Ch.Lex.decimal <* Par.Ch.hspace
-    void $ sep
+    void sep
     y <- Par.Ch.Lex.decimal <* Par.Ch.hspace
     pure $ V2 x y
 
@@ -125,8 +125,17 @@ overlaps boxes
     ys = yAxis hull
     hull = mconcat boxes
 
+notOverlapped :: (Num a, Ord a) => [Claim a] -> [Claim a]
+notOverlapped claims = do
+    claim <- claims
+    let noOverlap other =
+            idNum other == idNum claim ||
+            boxArea (claimToBox other `boxIntersect` claimToBox claim) == 0
+    guard $ all noOverlap claims
+    pure claim
 
-part1 :: [Claim Float] -> Int
+
+part1 :: RealFrac a => [Claim a] -> Int
 part1 = conflicts
     .> groupConflicts
     .> fmap overlaps
@@ -134,10 +143,14 @@ part1 = conflicts
     .> nubOrd
     .> length
 
+part2 :: (Num a, Ord a) => [Claim a] -> [Int]
+part2 = notOverlapped .> fmap idNum
+
 main :: IO ()
 main = do
     text <- readInputFileUtf8 "input/day-03.txt"
-    case getInput text of
+    case getInput @Float text of
         Left err -> die err
         Right input -> do
             print $ part1 input
+            print $ part2 input
