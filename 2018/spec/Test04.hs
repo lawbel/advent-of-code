@@ -65,8 +65,8 @@ tests :: TestTree
 tests = Tasty.testGroup "tests"
     [ parseTests
     , prettyTests
-    , propertyTests
     , unitTests
+    , propertyTests
     ]
 
 propertyTests :: TestTree
@@ -126,7 +126,10 @@ unitTests = Tasty.testGroup "unit tests"
         in  Day04.countTimeAsleep groups @?= time
     , HUnit.testCase "sleepiestMinutesFor" $
         Day04.sleepiestMinutesFor (Day04.MkGuard 10) groups @?= [24]
-    , HUnit.testCase "part1" $ Day04.part1 examples @?= Right 240
+    , HUnit.testCase "strategy1" $
+        Day04.strategy1 examples @?= Right (Day04.MkGuard 10, 24)
+    , HUnit.testCase "strategy2" $
+        Day04.strategy2 examples @?= Right (Day04.MkGuard 99, 45)
     ]
 
 table :: Text

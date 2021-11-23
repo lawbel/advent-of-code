@@ -4,6 +4,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Day04 where
@@ -25,6 +26,7 @@ import Data.Text.IO qualified as Text.IO
 import Data.Time (LocalTime, Day)
 import Data.Time qualified as Time
 import Data.Time.Format.ISO8601 qualified as ISO
+import Data.Tuple (swap)
 import Flow ((.>))
 import Numeric.Interval (Interval, (...))
 import Numeric.Interval qualified as Inter
@@ -250,16 +252,37 @@ countTimeAsleep records = Map.fromListWith (+) $ do
 mostTimeAsleep :: Map (Day, Guard) [RecordOf Wake] -> [Guard]
 mostTimeAsleep = countTimeAsleep .> maxEntriesByVal .> fmap fst
 
-sleepiestMinutesFor :: Guard -> Map (Day, Guard) [RecordOf Wake] -> [Int]
-sleepiestMinutesFor num records = fst <$> maxEntriesByVal minutes
+countMinutes :: Map (Day, Guard) [RecordOf Wake] -> Map (Int, Guard) Int
+countMinutes records = Map.unionsWith (+) $ do
+    num <- guards
+    pure $ Map.mapKeys (, num) $ countMinutesFor num records
+  where
+    guards = snd <$> Map.keys records
+
+countMinutesFor :: Guard -> Map (Day, Guard) [RecordOf Wake] -> Map Int Int
+countMinutesFor num records = Map.fromList $ maxEntriesByVal minutes
   where
     matches (key, sleeps) = if snd key == num then Just sleeps else Nothing
     intervals = concatMap asleepDuring $ mapMaybe matches $ Map.toList records
     minutes = Map.unionsWith (+) $ fmap countMinutesIn intervals
 
+mostFreqAsleep :: Map (Day, Guard) [RecordOf Wake] -> [(Int, Guard)]
+mostFreqAsleep records = do
+    supCount <- maybeToList maybeSup
+    (key, count) <- counter
+    guard $ count == supCount
+    pure key
+  where
+    counter = Map.toList $ countMinutes records
+    maybeSup = case snd <$> counter of
+        []     -> Nothing
+        x : xs -> Just $ supremum x xs
 
-part1 :: [RecordOf Event] -> Either String Int
-part1 records = do
+sleepiestMinutesFor :: Guard -> Map (Day, Guard) [RecordOf Wake] -> [Int]
+sleepiestMinutesFor num = countMinutesFor num .> Map.keys
+
+strategy1 :: [RecordOf Event] -> Either String (Guard, Int)
+strategy1 records = do
     grouped <- tryGroupRecords records
     num <- case mostTimeAsleep grouped of
         [num] -> pure num
@@ -269,8 +292,24 @@ part1 records = do
         [minute] -> pure minute
         minutes  -> Left
             [qc|no unique minute most asleep for #{unGuard num}: {minutes}|]
-    pure $ unGuard num * minute
+    pure (num, minute)
 
+strategy2 :: [RecordOf Event] -> Either String (Guard, Int)
+strategy2 records = do
+    grouped <- tryGroupRecords records
+    case mostFreqAsleep grouped of
+        [tup] -> pure $ swap tup
+        freq  -> Left [qc|no unique minute most frequently asleep: {freq}|]
+
+part1 :: [RecordOf Event] -> Either String Int
+part1 = strategy1 .> \case
+    Left err            -> Left err
+    Right (num, minute) -> pure $ unGuard num * minute
+
+part2 :: [RecordOf Event] -> Either String Int
+part2 = strategy2 .> \case
+    Left err            -> Left err
+    Right (num, minute) -> pure $ unGuard num * minute
 
 main :: IO ()
 main = do
@@ -283,3 +322,4 @@ main = do
             --     Right records ->
             --         Text.IO.putStrLn $ visualizeRecordsInHour 0 records
             print $ part1 input
+            print $ part2 input
