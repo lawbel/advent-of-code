@@ -35,6 +35,9 @@ runParser :: Parser a -> String -> Text -> Either String a
 runParser parser desc = Par.parse parser desc .> first Par.errorBundlePretty
 
 
+between :: Ord a => a -> a -> a -> Bool
+between a b x = (a <= x) && (x <= b)
+
 maybeToEither :: a -> Maybe b -> Either a b
 maybeToEither def = \case
     Nothing -> Left def

@@ -44,6 +44,7 @@ common common-dependencies
       , lens
       , linear
       , megaparsec
+      , parser-combinators
       , text
       , time
       , vector
@@ -63,6 +64,7 @@ library
       , Day03
       , Day04
       , Day05
+      , Day06
 
 library adventofcode2018-tests
     import:
@@ -81,6 +83,7 @@ library adventofcode2018-tests
       , Test03
       , Test04
       , Test05
+      , Test06
 
 
 executable day-01
@@ -106,6 +109,11 @@ executable day-04
 executable day-05
     import: common-exe-options
     mixins: adventofcode2018 (Day05 as Day)
+    main-is: Run.hs
+
+executable day-06
+    import: common-exe-options
+    mixins: adventofcode2018 (Day06 as Day)
     main-is: Run.hs
 
 
@@ -136,5 +144,11 @@ test-suite test-04
 test-suite test-05
     import: common-test-options
     mixins: adventofcode2018-tests (Test05 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-06
+    import: common-test-options
+    mixins: adventofcode2018-tests (Test06 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
