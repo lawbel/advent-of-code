@@ -22,7 +22,7 @@ import Data.Map qualified as Map
 import Data.Maybe (listToMaybe, mapMaybe, maybeToList)
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Text.IO qualified as Text.IO
+-- import Data.Text.IO qualified as Text.IO
 import Data.Time (LocalTime, Day)
 import Data.Time qualified as Time
 import Data.Time.Format.ISO8601 qualified as ISO
