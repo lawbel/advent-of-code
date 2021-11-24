@@ -108,8 +108,8 @@ unitTests = Tasty.testGroup "unit tests"
         in  [ HUnit.testCase "point D" $ result Map.!? 'D' @?= Just 9
             , HUnit.testCase "point E" $ result Map.!? 'E' @?= Just 17
             ]
-    , Tasty.testGroup "hull + onBoundary" $
-        let box = Day06.hull (fst <$> coords)
+    , Tasty.testGroup "boxEnclosing + onBoundary" $
+        let box = Day06.boxEnclosing (fst <$> coords)
             swapped = Map.fromList $ List.NE.toList $ fmap swap coords
             isOnBoundary c = Day06.onBoundary box <$> swapped Map.!? c
         in  [ HUnit.testCase "point A" $ isOnBoundary 'A' @?= Just True
@@ -119,8 +119,8 @@ unitTests = Tasty.testGroup "unit tests"
             , HUnit.testCase "point E" $ isOnBoundary 'E' @?= Just False
             , HUnit.testCase "point F" $ isOnBoundary 'F' @?= Just True
             ]
-    , HUnit.testCase "finiteAreas" $
-        let areas = Day06.finiteAreasInHull (fst <$> coords)
+    , HUnit.testCase "finiteAreasInBoxEnclosing" $
+        let areas = Day06.finiteAreasInBoxEnclosing (fst <$> coords)
             swapped = Map.fromList $ List.NE.toList $ fmap swap coords
             makeMap assoc = Map.fromList $ do
                 (char, val) <- assoc

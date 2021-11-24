@@ -49,8 +49,8 @@ dup x = (x, x)
 manhattan :: Num a => V2 a -> V2 a -> a
 manhattan u v = sum $ abs (u - v)
 
-hull :: Ord a => NonEmpty (V2 a) -> Box a
-hull (vec :| vecs) = MkBox
+boxEnclosing :: Ord a => NonEmpty (V2 a) -> Box a
+boxEnclosing (vec :| vecs) = MkBox
     { minimal = V2 (infimum x xs) (infimum y ys)
     , maximal = V2 (supremum x xs) (supremum y ys)
     }
@@ -117,9 +117,9 @@ countWithin box assoc = Map.fromListWith (+) $ do
     inf = minimal box
     sup = maximal box
 
-finiteAreasInHull
+finiteAreasInBoxEnclosing
     :: (Enum a, Num a, Ord a) => NonEmpty (V2 a) -> Map (V2 a) Int
-finiteAreasInHull vecs =
+finiteAreasInBoxEnclosing vecs =
     List.NE.toList vecs
         & fmap dup
         & Map.fromList
@@ -128,17 +128,17 @@ finiteAreasInHull vecs =
         & countWithin box
         & Map.filterWithKey (\v _ -> v `elem` interior)
   where
-    box = hull vecs
+    box = boxEnclosing vecs
     interior = List.NE.filter (not <. onBoundary box) vecs
     getTag = snd .> \case
         v :| [] -> Just v
         _       -> Nothing
 
-largestAreaInHull :: (Enum a, Num a, Ord a) => NonEmpty (V2 a) -> Int
-largestAreaInHull = finiteAreasInHull .> supremum 0
+largestAreaInBoxEnclosing :: (Enum a, Num a, Ord a) => NonEmpty (V2 a) -> Int
+largestAreaInBoxEnclosing = finiteAreasInBoxEnclosing .> supremum 0
 
 part1 :: (Enum a, Num a, Ord a) => NonEmpty (V2 a) -> Int
-part1 = largestAreaInHull
+part1 = largestAreaInBoxEnclosing
 
 main :: IO ()
 main = do
