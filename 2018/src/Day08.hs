@@ -3,7 +3,8 @@
 module Day08 where
 
 import Control.Applicative (Alternative, empty)
-import Control.Monad (replicateM, (>=>))
+import Control.Lens ((^?), ix)
+import Control.Monad ((>=>), replicateM)
 import Data.Bifunctor (first)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text (Text)
@@ -22,15 +23,13 @@ type Parser a b = Parsec Void a b
 data Header = MkHeader
     { numChildren :: Int
     , numMetadata :: Int
-    }
-    deriving (Eq, Ord, Show, Read)
+    } deriving (Eq, Ord, Show, Read)
 
-data Tree a = Node
+data Tree = Node
     { header :: Header
-    , children :: [Tree a]
-    , metadata :: NonEmpty a
-    }
-    deriving (Eq, Ord, Show, Read)
+    , children :: [Tree]
+    , metadata :: NonEmpty Int
+    } deriving (Eq, Ord, Show, Read)
 
 replicateM1 :: Alternative f => Int -> f a -> f (NonEmpty a)
 replicateM1 n action
@@ -46,14 +45,14 @@ parseHeader = do
     numMetadata <- Par.anySingle
     pure $ MkHeader{..}
 
-parseTree :: Parser [Int] (Tree Int)
+parseTree :: Parser [Int] Tree
 parseTree = do
     header <- parseHeader
     children <- replicateM (numChildren header) parseTree
     metadata <- replicateM1 (numMetadata header) Par.anySingle
     pure $ Node{..}
 
-getInput :: Text -> Either String (Tree Int)
+getInput :: Text -> Either String Tree
 getInput = getVals >=> getTree
   where
     getVals =
@@ -63,11 +62,21 @@ getInput = getVals >=> getTree
         Par.parseMaybe (parseTree <* Par.eof)
             .> maybeToEither "couldn't parse tree"
 
-sumOfMetadata :: Num a => Tree a -> a
+sumOfMetadata :: Tree -> Int
 sumOfMetadata Node{..} = sum metadata + sum (sumOfMetadata <$> children)
 
-part1 :: Num a => Tree a -> a
+part1 :: Tree -> Int
 part1 = sumOfMetadata
+
+nodeValue :: Tree -> Int
+nodeValue node@Node{..} = if null children
+    then sumOfMetadata node
+    else sum $ do
+        i <- metadata
+        pure $ maybe 0 nodeValue $ children ^? ix (i - 1)
+
+part2 :: Tree -> Int
+part2 = nodeValue
 
 main :: IO ()
 main = do
@@ -76,3 +85,4 @@ main = do
         Left err -> die err
         Right input -> do
             print $ part1 input
+            print $ part2 input
