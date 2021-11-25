@@ -48,8 +48,8 @@ prettyTests :: TestTree
 prettyTests = Tasty.testGroup "prettyTests tests"
     [ HUnit.testCase "points only" $
         let box = Day06.MkBox
-                { Day06.minimal = V2 0 0
-                , Day06.maximal = V2 9 9
+                { Day06.minimal = pure 0
+                , Day06.maximal = pure 9
                 }
             assocs = Map.fromList $ List.NE.toList coords
             vizualize = fromMaybe '.'
@@ -68,8 +68,8 @@ prettyTests = Tasty.testGroup "prettyTests tests"
         in  Day06.vizualizeWithin box assocs vizualize @?= result
     , HUnit.testCase "points + closest" $
         let box = Day06.MkBox
-                { Day06.minimal = V2 0 0
-                , Day06.maximal = V2 9 9
+                { Day06.minimal = pure 0
+                , Day06.maximal = pure 9
                 }
             assocs = Map.fromList $ List.NE.toList coords
             closest = Day06.closestWithin box assocs
@@ -90,14 +90,38 @@ prettyTests = Tasty.testGroup "prettyTests tests"
                 , "bbb.ffffFf"
                 ]
         in  Day06.vizualizeWithin box closest vizualize @?= result
+    , HUnit.testCase "sumOfDistanceWithin" $
+        let box = Day06.MkBox
+                { Day06.minimal = pure 0
+                , Day06.maximal = pure 9
+                }
+            assocs = Map.fromList $ List.NE.toList coords
+            sums = Day06.sumOfDistanceWithin box assocs
+            vizualize = \case
+                Just (_, Just c)     -> c
+                Just (n, _) | n < 32 -> '#'
+                _                    -> '.'
+            result = Text.intercalate "\n"
+                [ ".........."
+                , ".A........"
+                , ".........."
+                , "...###..C."
+                , "..#D###..."
+                , "..###E#..."
+                , ".B.###...."
+                , ".........."
+                , ".........."
+                , "........F."
+                ]
+        in  Day06.vizualizeWithin box sums vizualize @?= result
     ]
 
 unitTests :: TestTree
 unitTests = Tasty.testGroup "unit tests"
     [ Tasty.testGroup "countWithin" $
         let box = Day06.MkBox
-                { Day06.minimal = V2 0 0
-                , Day06.maximal = V2 9 9
+                { Day06.minimal = pure 0
+                , Day06.maximal = pure 9
                 }
             assocs = Map.fromList $ List.NE.toList coords
             closest = Day06.closestWithin box assocs
@@ -127,4 +151,18 @@ unitTests = Tasty.testGroup "unit tests"
                 key <- maybeToList $ swapped Map.!? char
                 pure (key, val)
         in  areas @?= makeMap [('D', 9), ('E', 17)]
+    , Tasty.testGroup "manhattan" $
+        let swapped = Map.fromList $ List.NE.toList $ fmap swap coords
+            dist c = Day06.manhattan (V2 4 3) <$> Map.lookup c swapped
+        in  [ HUnit.testCase "point A" $ dist 'A' @?= Just 5
+            , HUnit.testCase "point B" $ dist 'B' @?= Just 6
+            , HUnit.testCase "point C" $ dist 'C' @?= Just 4
+            , HUnit.testCase "point D" $ dist 'D' @?= Just 2
+            , HUnit.testCase "point E" $ dist 'E' @?= Just 3
+            , HUnit.testCase "point F" $ dist 'F' @?= Just 10
+            ]
+    , HUnit.testCase "sumOfManhattan" $
+        Day06.sumOfManhattan (V2 4 3) (fst <$> coords) @?= 30
+    , HUnit.testCase "regionSizeInBoxEnclosing" $
+        Day06.regionSizeInBoxEnclosing 32 (fst <$> coords) @?= 16
     ]

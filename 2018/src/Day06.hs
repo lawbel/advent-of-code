@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TupleSections #-}
 
 module Day06 where
 
@@ -49,6 +50,9 @@ dup x = (x, x)
 manhattan :: Num a => V2 a -> V2 a -> a
 manhattan u v = sum $ abs (u - v)
 
+sumOfManhattan :: (Num a, Foldable f, Functor f) => V2 a -> f (V2 a) -> a
+sumOfManhattan u vs = sum (manhattan u <$> vs)
+
 boxEnclosing :: Ord a => NonEmpty (V2 a) -> Box a
 boxEnclosing (vec :| vecs) = MkBox
     { minimal = V2 (infimum x xs) (infimum y ys)
@@ -95,6 +99,20 @@ closestWithin box assoc = Map.fromList $ do
     inf = minimal box
     sup = maximal box
 
+sumOfDistanceWithin
+    :: (Enum a, Num a, Ord a)
+    => Box a -> Map (V2 a) b -> Map (V2 a) (a, Maybe b)
+sumOfDistanceWithin box assocs = Map.fromList $ do
+    x <- [inf ^. _x .. sup ^. _x]
+    y <- [inf ^. _y .. sup ^. _y]
+    let vec = V2 x y
+    let val = (sumOfManhattan vec vecs, assocs Map.!? vec)
+    pure (vec, val)
+  where
+    vecs = Map.keys assocs
+    inf = minimal box
+    sup = maximal box
+
 vizualizeWithin
     :: (Enum a, Ord a) => Box a -> Map (V2 a) b -> (Maybe b -> Char) -> Text
 vizualizeWithin box assoc vizualize = Text.intercalate "\n" $ do
@@ -134,11 +152,29 @@ finiteAreasInBoxEnclosing vecs =
         v :| [] -> Just v
         _       -> Nothing
 
+regionInBoxEnclosing
+    :: (Enum a, Num a, Ord a) => a -> NonEmpty (V2 a) -> Map (V2 a) a
+regionInBoxEnclosing level vecs =
+    List.NE.toList vecs
+        & fmap (, ())
+        & Map.fromList
+        & sumOfDistanceWithin (boxEnclosing vecs)
+        & fmap fst
+        & Map.filter (< level)
+
 largestAreaInBoxEnclosing :: (Enum a, Num a, Ord a) => NonEmpty (V2 a) -> Int
 largestAreaInBoxEnclosing = finiteAreasInBoxEnclosing .> supremum 0
 
+regionSizeInBoxEnclosing
+    :: (Enum a, Num a, Ord a) => a -> NonEmpty (V2 a) -> Int
+regionSizeInBoxEnclosing level vecs =
+    Map.size $ regionInBoxEnclosing level vecs
+
 part1 :: (Enum a, Num a, Ord a) => NonEmpty (V2 a) -> Int
 part1 = largestAreaInBoxEnclosing
+
+part2 :: (Enum a, Num a, Ord a) => NonEmpty (V2 a) -> Int
+part2 = regionSizeInBoxEnclosing 10_000
 
 main :: IO ()
 main = do
@@ -147,3 +183,4 @@ main = do
         Left err -> die err
         Right input -> do
             print $ part1 input
+            print $ part2 input
