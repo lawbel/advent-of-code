@@ -15,6 +15,7 @@ import Data.Void (Void)
 import Flow ((.>))
 import Numeric.Interval (Interval)
 import Numeric.Interval qualified as Inter
+import Text.Megaparsec (Parsec)
 import Text.Megaparsec qualified as Par
 
 import Paths_adventofcode2018 (getDataFileName)
@@ -29,7 +30,7 @@ readInputFileUtf8 = getDataFileName >=> readFileUtf8
 textShow :: Show a => a -> Text
 textShow = show .> Text.pack
 
-type Parser a = Par.Parsec Void Text a
+type Parser a = Parsec Void Text a
 
 runParser :: Parser a -> String -> Text -> Either String a
 runParser parser desc = Par.parse parser desc .> first Par.errorBundlePretty
