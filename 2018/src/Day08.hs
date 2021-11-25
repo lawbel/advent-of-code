@@ -18,6 +18,7 @@ import Text.Megaparsec.Char.Lexer qualified as Par.Ch.Lex
 
 import Common hiding (Parser, runParser)
 
+
 type Parser a b = Parsec Void a b
 
 data Header = MkHeader
@@ -33,7 +34,7 @@ data Tree = Node
 
 replicateM1 :: Alternative f => Int -> f a -> f (NonEmpty a)
 replicateM1 n action
-    | n <= 0 = empty
+    | n <= 0    = empty
     | otherwise = (:|) <$> action <*> replicateM (n - 1) action
 
 parseVals :: Parser Text [Int]
@@ -82,7 +83,7 @@ main :: IO ()
 main = do
     text <- readInputFileUtf8 "input/day-08.txt"
     case getInput text of
-        Left err -> die err
+        Left err    -> die err
         Right input -> do
             print $ part1 input
             print $ part2 input
