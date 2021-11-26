@@ -7,7 +7,7 @@
 module Day09 where
 
 import Control.Applicative (Alternative, (<|>))
-import Control.Lens ((%=), (.=), use, zoom, ix, at)
+import Control.Lens ((%=), (.=), (*~), use, zoom, ix, at)
 import Control.Monad (void)
 import Control.Monad.State (State, MonadState)
 import Control.Monad.State qualified as State
@@ -27,7 +27,7 @@ import Common
 data Input marble player = MkInput
     { players :: player
     , lastMarble :: marble
-    } deriving (Eq, Ord, Read, Show)
+    } deriving (Eq, Generic, Ord, Read, Show)
 
 data Game marble player = MkGame
     { marblesCircle :: Seq marble
@@ -141,9 +141,13 @@ highScore = playerScores .> fmap sum .> supremum 0
 part1 :: (Integral marble, Integral player) => Input marble player -> marble
 part1 = runGame .> highScore
 
+part2 :: (Integral marble, Integral player) => Input marble player -> marble
+part2 = (#lastMarble *~ 100) .> runGame .> highScore
+
 main :: IO ()
 main = do
     print $ part1 input
+    print $ part2 input
   where
     input :: Input Int Int
     input = MkInput
