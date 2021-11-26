@@ -39,11 +39,13 @@ common common-dependencies
       , bytestring
       , containers
       , flow
+      , generic-lens
       , interpolatedstring-perl6
       , intervals
       , lens
       , linear
       , megaparsec
+      , mtl
       , parser-combinators
       , pretty-simple
       , text
@@ -67,6 +69,7 @@ library
       , Day05
       , Day06
       , Day08
+      , Day09
 
 library adventofcode2018-tests
     import:
@@ -87,6 +90,7 @@ library adventofcode2018-tests
       , Test05
       , Test06
       , Test08
+      , Test09
 
 
 executable day-01
@@ -122,6 +126,11 @@ executable day-06
 executable day-08
     import: common-exe-options
     mixins: adventofcode2018 (Day08 as Day)
+    main-is: Run.hs
+
+executable day-09
+    import: common-exe-options
+    mixins: adventofcode2018 (Day09 as Day)
     main-is: Run.hs
 
 
@@ -164,5 +173,11 @@ test-suite test-06
 test-suite test-08
     import: common-test-options
     mixins: adventofcode2018-tests (Test08 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-09
+    import: common-test-options
+    mixins: adventofcode2018-tests (Test09 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
