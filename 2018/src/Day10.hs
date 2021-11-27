@@ -62,14 +62,15 @@ getInput = runParser (parsePoints <* Par.eof) "day-10"
 step :: Num a => Point a -> Point a
 step point = point & #position +~ velocity point
 
-stepWhileDiamDecr :: (Num a, Ord a) => NonEmpty (Point a) -> NonEmpty (Point a)
-stepWhileDiamDecr points
-    | after <= before = stepWhileDiamDecr next
-    | otherwise       = points
+stepWhileDiamDecr
+    :: (Num a, Ord a) => NonEmpty (Point a) -> (NonEmpty (Point a), Int)
+stepWhileDiamDecr = go 0
   where
-    next = step <$> points
-    before = diameter (position <$> points)
-    after = diameter (position <$> next)
+    go n points =
+        let before = diameter (position <$> points)
+            after = diameter (position <$> next)
+            next = step <$> points
+        in  if after <= before then go (n + 1) next else (points, n)
 
 vizualize :: (Ord a, Enum a) => NonEmpty (V2 a) -> Text
 vizualize points = Text.intercalate "\n" $ do
@@ -94,7 +95,10 @@ diameter points = distance inf sup
     sup = V2 (supremumNE xs) (supremumNE ys)
 
 part1 :: (Num a, Ord a, Enum a) => NonEmpty (Point a) -> Text
-part1 = stepWhileDiamDecr .> fmap position .> vizualize
+part1 = stepWhileDiamDecr .> fst .> fmap position .> vizualize
+
+part2 :: (Num a, Ord a) => NonEmpty (Point a) -> Int
+part2 = stepWhileDiamDecr .> snd
 
 main :: IO ()
 main = do
@@ -103,3 +107,4 @@ main = do
         Left err -> die err
         Right input -> do
             Text.IO.putStrLn $ part1 input
+            print $ part2 input

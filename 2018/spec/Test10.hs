@@ -67,19 +67,22 @@ unitTests = Tasty.testGroup "unit tests"
     [ HUnit.testCase "step" $
         let point = makePoint @Int (3, 9) (1, -2)
         in  Day10.position (iter 3 Day10.step point) @?= V2 6 3
-    , HUnit.testCase "stepWhileDiamDecr" $
-        let result = Text.intercalate "\n"
-                [ "#...#..###"
-                , "#...#...#."
-                , "#...#...#."
-                , "#####...#."
-                , "#...#...#."
-                , "#...#...#."
-                , "#...#...#."
-                , "#...#..###"
-                ]
-            finalPos = Day10.position <$> Day10.stepWhileDiamDecr points
-        in  Day10.vizualize finalPos @?= result
+    , Tasty.testGroup "stepWhileDiamDecr" $
+        let (final, num) = Day10.stepWhileDiamDecr points
+        in  [ HUnit.testCase "image" $
+                let result = Text.intercalate "\n"
+                        [ "#...#..###"
+                        , "#...#...#."
+                        , "#...#...#."
+                        , "#####...#."
+                        , "#...#...#."
+                        , "#...#...#."
+                        , "#...#...#."
+                        , "#...#..###"
+                        ]
+                in  Day10.vizualize (Day10.position <$> final) @?= result
+            , HUnit.testCase "steps" $ num @?= 3
+            ]
     ]
 
 iter :: Int -> (a -> a) -> a -> a
