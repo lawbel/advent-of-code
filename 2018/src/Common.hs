@@ -5,6 +5,7 @@ module Common where
 import Control.Monad ((>=>), guard)
 import Data.Bifunctor (first)
 import Data.ByteString qualified as Byt
+import Data.List.NonEmpty (NonEmpty((:|)))
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
@@ -53,8 +54,14 @@ distinctUnorderedPairs list = do
     n = length vec
     vec = Vec.fromList list
 
+supremumNE :: Ord a => NonEmpty a -> a
+supremumNE (x :| xs) = supremum x xs
+
 supremum :: (Foldable t, Ord a) => a -> t a -> a
 supremum = supremumBy compare
+
+supremumByNE :: Ord a => (a -> a -> Ordering) -> NonEmpty a -> a
+supremumByNE cmp (x :| xs) = supremumBy cmp x xs
 
 supremumBy :: Foldable t => (a -> a -> Ordering) -> a -> t a -> a
 supremumBy cmp = foldl $
@@ -62,8 +69,14 @@ supremumBy cmp = foldl $
         GT -> x
         _  -> y
 
+infimumNE :: Ord a => NonEmpty a -> a
+infimumNE (x :| xs) = infimum x xs
+
 infimum :: (Foldable t, Ord a) => a -> t a -> a
 infimum = infimumBy compare
+
+infimumByNE :: Ord a => (a -> a -> Ordering) -> NonEmpty a -> a
+infimumByNE cmp (x :| xs) = infimumBy cmp x xs
 
 infimumBy :: Foldable t => (a -> a -> Ordering) -> a -> t a -> a
 infimumBy cmp = foldl $
