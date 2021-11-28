@@ -8,16 +8,26 @@ Doing the Advent of Code 2018 challenges in Haskell.
 
 ```shell
 > stack build
-> stack repl adventofcode2018:lib
 > stack run day-01
 > stack test :test-01
+```
+
+```shell
+> stack repl adventofcode2018:lib
+...
+>>> :load Day01
 ```
 
 ### Cabal
 
 ```shell
 > cabal build
-> cabal repl adventofcode2018
 > cabal run day-01
 > cabal run test-01
+```
+
+```shell
+> cabal repl adventofcode2018
+...
+>>> :load Day01
 ```
