@@ -1,10 +1,10 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE MultiWayIf #-}
 
 module Day12 where
 
@@ -153,8 +153,41 @@ sumIndexAliveAfter n plants rules =
         & IntMap.keys
         & sum
 
+-- | If the result of one 'step' is the same as the previous (except for being
+-- shifted over left/right by some amount), then the result of subsequent calls
+-- to 'step' will have the same effect of merely shifting over the plants.
+--
+-- If this is not readily apparent, consider that the rules for how plants
+-- develop are independent of the plants position.
+--
+-- Given this fact, our strategy for handling very large numbers of steps is:
+--   * identify when we enter a loop as just desribed, and stop iterating at
+--     that point,
+--   * calculate how much we /would have drifted/ if we completed the
+--     remaining steps,
+--   * add the right amount onto our final sum.
+sumIndexAliveAfter' :: Int -> [Plant] -> Map (Match Plant) Plant -> Integer
+sumIndexAliveAfter' m plants rules = sum $ fmap (+ drift) tape
+  where
+    (tape, drift) = go m (asIntMap plants) & _1 %~ aliveKeys
+    go i cur =
+        let next = step rules Dead cur
+        in  if  | i <= 0 -> (cur, 0)
+                | Just c <- getMinKey cur
+                , Just n <- getMinKey next
+                , IntMap.mapKeys (+ c) next == IntMap.mapKeys (+ n) cur ->
+                    ( cur
+                    , fromIntegral $ i * (n - c)
+                    )
+                | otherwise -> go (i - 1) next
+    aliveKeys = IntMap.filter (== Alive) .> IntMap.keys .> fmap fromIntegral
+    getMinKey = IntMap.minViewWithKey .> fmap (fst .> fst)
+
 part1 :: [Plant] -> Map (Match Plant) Plant -> Int
 part1 = sumIndexAliveAfter 20
+
+part2 :: [Plant] -> Map (Match Plant) Plant -> Integer
+part2 = sumIndexAliveAfter' 50_000_000_000
 
 main :: IO ()
 main = do
@@ -163,3 +196,4 @@ main = do
         Left err -> die err
         Right (plants, rules) -> do
             print $ part1 plants rules
+            print $ part2 plants rules
