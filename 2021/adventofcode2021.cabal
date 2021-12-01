@@ -5,9 +5,11 @@ version: 0.1.0.0
 author: rvLMdE7
 build-type: Simple
 license: BSD-3-Clause
+
 license-file: LICENSE
 extra-source-files: README.md
 data-files: input/*.txt
+
 
 common common-ghc-lib-options
     ghc-options:
@@ -31,6 +33,7 @@ common common-lang-options
         , LambdaCase
         , NumericUnderscores
 
+
 common common-runtime-options
     import:
           common-lang-options
@@ -46,8 +49,10 @@ common common-test-options
     import: common-runtime-options
     build-depends: adventofcode2021-tests
 
-common common-dependencies
-    import: common-lang-options
+common common-lib-options
+    import:
+          common-lang-options
+        , common-ghc-lib-options
     build-depends:
           base ^>=4.14
         , bytestring
@@ -56,11 +61,6 @@ common common-dependencies
         , text
         , vector
 
-common common-lib-options
-    import:
-          common-lang-options
-        , common-ghc-lib-options
-        , common-dependencies
 
 library
     import: common-lib-options
