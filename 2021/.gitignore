@@ -1,0 +1,8 @@
+# build folders
+dist-newstyle/
+.stack-work/
+
+# lock files
+.ghc.environment.*
+cabal.project.local
+stack.yaml.lock

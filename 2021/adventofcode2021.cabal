@@ -1,0 +1,94 @@
+cabal-version: 3.0
+
+name: adventofcode2021
+version: 0.1.0.0
+author: rvLMdE7
+build-type: Simple
+license: BSD-3-Clause
+license-file: LICENSE
+extra-source-files: README.md
+data-files: input/*.txt
+
+common common-ghc-lib-options
+    ghc-options:
+        -Wall
+        -Wincomplete-record-updates
+        -Wincomplete-uni-patterns
+        -Wpartial-fields
+        -Wredundant-constraints
+        -Wunused-packages
+        -fhide-source-paths
+
+common common-ghc-exe-options
+    import: common-ghc-lib-options
+    ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N
+
+common common-lang-options
+    default-language: Haskell2010
+    default-extensions:
+          BinaryLiterals
+        , ImportQualifiedPost
+        , LambdaCase
+        , NumericUnderscores
+
+common common-runtime-options
+    import:
+          common-lang-options
+        , common-ghc-exe-options
+    hs-source-dirs: run
+    build-depends: base
+
+common common-exe-options
+    import: common-runtime-options
+    build-depends: adventofcode2021
+
+common common-test-options
+    import: common-runtime-options
+    build-depends: adventofcode2021-tests
+
+common common-dependencies
+    import: common-lang-options
+    build-depends:
+          base ^>=4.14
+        , bytestring
+        , flow
+        , megaparsec
+        , text
+
+common common-lib-options
+    import:
+          common-lang-options
+        , common-ghc-lib-options
+        , common-dependencies
+
+library
+    import: common-lib-options
+    hs-source-dirs: src
+    exposed-modules:
+          Paths_adventofcode2021
+        , Common
+        , Day01
+
+library adventofcode2021-tests
+    import: common-lib-options
+    hs-source-dirs: spec
+    build-depends:
+          adventofcode2021
+        , tasty
+        , tasty-hunit
+        , tasty-quickcheck
+    exposed-modules:
+          Test01
+
+
+executable day-01
+    import: common-exe-options
+    mixins: adventofcode2021 (Day01 as Day)
+    main-is: Run.hs
+
+
+test-suite test-01
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test01 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
