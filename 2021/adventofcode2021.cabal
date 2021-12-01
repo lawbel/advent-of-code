@@ -54,6 +54,7 @@ common common-dependencies
         , flow
         , megaparsec
         , text
+        , vector
 
 common common-lib-options
     import:
