@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -13,9 +11,10 @@
 
 module Day02 where
 
-import Data.Foldable (asum)
+import Control.Monad.State qualified as State
+import Data.Foldable (asum, foldl')
 import Data.Text (Text)
-import Optics ((&))
+import Optics ((&), use)
 import Optics.TH (noPrefixFieldLabels, makeFieldLabelsWith)
 import System.Exit (die)
 import Text.Megaparsec qualified as Par
@@ -28,7 +27,8 @@ import Common
 data Position a = MkPosition
     { horiz :: a
     , depth :: a
-    } deriving (Eq, Functor, Foldable, Ord, Read, Show)
+    , aim :: a
+    } deriving (Eq, Ord, Read, Show)
 
 makeFieldLabelsWith noPrefixFieldLabels ''Position
 
@@ -36,7 +36,7 @@ data Command a
     = Forward a
     | Down a
     | Up a
-    deriving (Eq, Functor, Ord, Read, Show)
+    deriving (Eq, Ord, Read, Show)
 
 parseDecimal :: Num a => Text -> Parser a
 parseDecimal str = do
@@ -56,17 +56,35 @@ parseCommands = parseCommand `Par.sepEndBy` Par.Ch.newline
 getCommands :: Num a => Text -> Either String [Command a]
 getCommands = runParser (parseCommands <* Par.eof) "day-02"
 
-run :: Num a => Command a -> Position a -> Position a
-run = \case
+run1 :: Num a => Command a -> Position a -> Position a
+run1 = \case
     Forward x -> #horiz +~ x
     Down x    -> #depth +~ x
     Up x      -> #depth -~ x
 
-runs :: Num a => [Command a] -> Position a -> Position a
-runs = flip $ foldr run
+run2 :: Num a => Command a -> Position a -> Position a
+run2 = \case
+    Down x    -> #aim +~ x
+    Up x      -> #aim -~ x
+    Forward x -> State.execState $ do
+        #horiz += x
+        cur <- use #aim
+        #depth += (cur * x)
+
+runs1 :: Num a => [Command a] -> Position a -> Position a
+runs1 cmds pos = foldl' (flip run1) pos cmds
+
+runs2 :: Num a => [Command a] -> Position a -> Position a
+runs2 cmds pos = foldl' (flip run2) pos cmds
+
+area :: Num a => Position a -> a
+area p = depth p * horiz p
 
 part1 :: Num a => [Command a] -> a
-part1 cmds = runs cmds (MkPosition 0 0) & product
+part1 cmds = runs1 cmds (MkPosition 0 0 0) & area
+
+part2 :: Num a => [Command a] -> a
+part2 cmds = runs2 cmds (MkPosition 0 0 0) & area
 
 main :: IO ()
 main = do
@@ -75,3 +93,4 @@ main = do
         Left err -> die err
         Right commands -> do
             print $ part1 commands
+            print $ part2 commands

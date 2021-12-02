@@ -57,6 +57,7 @@ common common-lib-options
         , bytestring
         , flow
         , megaparsec
+        , mtl
         , optics
         , text
         , vector

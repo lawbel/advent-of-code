@@ -3,13 +3,15 @@
 module Common where
 
 import Control.Monad ((>=>))
+import Control.Monad.State (MonadState)
 import Data.Bifunctor (first)
 import Data.ByteString qualified as Byt
 import Data.Text (Text)
 import Data.Text.Encoding qualified as Text.Enc
 import Data.Void (Void)
 import Flow ((.>))
-import Optics (A_Setter, Is, Optic, (%~))
+import Optics (A_Setter, Is, Optic, Optic', (%~))
+import Optics.State.Operators ((%=))
 import Text.Megaparsec (Parsec)
 import Text.Megaparsec qualified as Par
 
@@ -32,3 +34,6 @@ optic +~ x = optic %~ (+ x)
 
 (-~) :: (Is k A_Setter, Num a) => Optic k is s t a a -> a -> s -> t
 optic -~ x = optic %~ subtract x
+
+(+=) :: (Is k A_Setter, MonadState s m, Num a) => Optic' k is s a -> a -> m ()
+optic += x = optic %= (+ x)
