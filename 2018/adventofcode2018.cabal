@@ -5,6 +5,7 @@ version: 0.1.0.0
 author: rvLMdE7
 build-type: Simple
 license: BSD-3-Clause
+
 license-file: LICENSE
 extra-source-files: README.md
 data-files: input/*.txt
@@ -12,94 +13,93 @@ data-files: input/*.txt
 common common-lang-options
     default-language: Haskell2010
     default-extensions:
-        BinaryLiterals
-      , ImportQualifiedPost
-      , NumericUnderscores
+        , BinaryLiterals
+        , ImportQualifiedPost
+        , NumericUnderscores
 
 common common-exe-options
     import: common-lang-options
     ghc-options: -Wall -O2
     hs-source-dirs: run
     build-depends:
-        base
-      , adventofcode2018
+        , base
+        , adventofcode2018
 
 common common-test-options
     import: common-lang-options
     ghc-options: -Wall -O2
     hs-source-dirs: run
     build-depends:
-        base
-      , adventofcode2018-tests
+        , base
+        , adventofcode2018-tests
 
 common common-dependencies
     import: common-lang-options
     build-depends:
-        algebraic-graphs
-      , base ^>=4.14
-      , bytestring
-      , containers
-      , flow
-      , generic-lens
-      , interpolatedstring-perl6
-      , intervals
-      , lens
-      , linear
-      , megaparsec
-      , mtl
-      , parser-combinators
-      , pretty-simple
-      , text
-      , time
-      , vector
+        , algebraic-graphs
+        , base ^>=4.14
+        , bytestring
+        , containers
+        , flow
+        , generic-lens
+        , interpolatedstring-perl6
+        , intervals
+        , lens
+        , linear
+        , megaparsec
+        , mtl
+        , parser-combinators
+        , pretty-simple
+        , text
+        , time
+        , vector
 
 library
     import:
-          common-lang-options
+        , common-lang-options
         , common-dependencies
     ghc-options: -Wall
     hs-source-dirs: src
-    other-modules:
-        Common
+    other-modules: Paths_adventofcode2018
     exposed-modules:
-        Paths_adventofcode2018
-      , Day01
-      , Day02
-      , Day03
-      , Day04
-      , Day05
-      , Day06
-      , Day07
-      , Day08
-      , Day09
-      , Day10
-      , Day12
-      , Day13
+        , Common
+        , Day01
+        , Day02
+        , Day03
+        , Day04
+        , Day05
+        , Day06
+        , Day07
+        , Day08
+        , Day09
+        , Day10
+        , Day12
+        , Day13
 
 library adventofcode2018-tests
     import:
-          common-lang-options
+        , common-lang-options
         , common-dependencies
-    ghc-options: -Wall -O2
+    ghc-options: -Wall
     hs-source-dirs: spec
     build-depends:
-        adventofcode2018
-      , tasty
-      , tasty-hunit
-      , tasty-quickcheck
+        , adventofcode2018
+        , tasty
+        , tasty-hunit
+        , tasty-quickcheck
     exposed-modules:
-        Test01
-      , Test02
-      , Test03
-      , Test04
-      , Test05
-      , Test06
-      , Test07
-      , Test08
-      , Test09
-      , Test10
-      , Test12
-      , Test13
+        , Test01
+        , Test02
+        , Test03
+        , Test04
+        , Test05
+        , Test06
+        , Test07
+        , Test08
+        , Test09
+        , Test10
+        , Test12
+        , Test13
 
 
 executable day-01
