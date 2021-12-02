@@ -18,7 +18,6 @@ common common-ghc-lib-options
         -Wincomplete-uni-patterns
         -Wpartial-fields
         -Wredundant-constraints
-        -Wunused-packages
         -fhide-source-paths
 
 common common-ghc-exe-options
@@ -58,6 +57,7 @@ common common-lib-options
         , bytestring
         , flow
         , megaparsec
+        , optics
         , text
         , vector
 
@@ -69,6 +69,7 @@ library
           Paths_adventofcode2021
         , Common
         , Day01
+        , Day02
 
 library adventofcode2021-tests
     import: common-lib-options
@@ -80,6 +81,7 @@ library adventofcode2021-tests
         , tasty-quickcheck
     exposed-modules:
           Test01
+          Test02
 
 
 executable day-01
@@ -87,9 +89,20 @@ executable day-01
     mixins: adventofcode2021 (Day01 as Day)
     main-is: Run.hs
 
+executable day-02
+    import: common-exe-options
+    mixins: adventofcode2021 (Day02 as Day)
+    main-is: Run.hs
+
 
 test-suite test-01
     import: common-test-options
     mixins: adventofcode2021-tests (Test01 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-02
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test02 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
