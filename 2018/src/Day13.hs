@@ -10,19 +10,24 @@ module Day13 where
 import Control.Applicative (many, empty)
 import Control.Arrow ((&&&))
 import Control.Lens
-    ( Iso', (^.), (%~), (.~), (?~), (&), _Left, _Right, _2, preview, over
-    , view, at, iso, ix
+    ( Iso', (%~), (.=), (?=), (^.), (.~), (&), _Left, _Right, _2, preview
+    , over, view, at, iso, ix
     )
-import Control.Monad ((>=>), foldM)
+import Control.Monad ((>=>))
+import Control.Monad.State (State)
+import Control.Monad.State qualified as State
 import Data.Foldable (asum)
 import Data.Functor (($>))
 import Data.Generics.Labels ()  -- for #lens orphan instance
 import Data.List qualified as List
+import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty qualified as List.NE
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (mapMaybe)
+import Data.Maybe (catMaybes, mapMaybe, listToMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Traversable (for)
 import Flow ((.>), (<.))
 import GHC.Generics (Generic)
 import Linear (V2(V2), _x, _y, _yx)
@@ -73,7 +78,11 @@ data SortOfCrash
 data Crash = MkCrash
     { position :: V2 Int
     , crashSort :: SortOfCrash
-    , curState :: Railway
+    } deriving (Eq, Ord, Read, Show)
+
+data Crashes = MkCrashes
+    { crashes :: NonEmpty Crash
+    , recover :: Railway
     } deriving (Eq, Ord, Read, Show)
 
 parseTrack :: Parser Track
@@ -101,10 +110,7 @@ parseCart = asum
     , Par.Ch.char '<' $> makeCart West
     ]
   where
-    makeCart dir = MkCart
-        { direction = dir
-        , choice = GoLeft
-        }
+    makeCart dir = MkCart dir GoLeft
 
 prettyCart :: Cart -> Char
 prettyCart = direction .> \case
@@ -131,7 +137,7 @@ parseRailway :: Parser Railway
 parseRailway = do
     grid <- zip [0..] <$> Par.sepEndBy parseRow Par.Ch.newline
     let objects = do
-            (y, row)  <- grid
+            (y, row) <- grid
             (x, tile) <- row
             case tile of
                 Nothing  -> empty
@@ -165,9 +171,11 @@ prettyRailway MkRailway{..} = Text.intercalate "\n" $ do
 asLines :: Iso' Text [Text]
 asLines = iso Text.lines (Text.intercalate "\n")
 
-prettyCrash :: Crash -> Text
-prettyCrash MkCrash{..} = prettyRailway curState
-    & asLines . ix (position ^. _y) . ix (position ^. _x) .~ 'X'
+prettyCrash :: Crashes -> Text
+prettyCrash MkCrashes{..} = prettyRailway recover & flip (foldr mark) crashes
+  where
+    mark MkCrash{..} =
+        asLines . ix (position ^. _y) . ix (position ^. _x) .~ 'X'
 
 getInput :: Text -> Either String Railway
 getInput = runParser (parseRailway <* Par.eof) "day-13"
@@ -238,45 +246,65 @@ moveOn track cart@MkCart{..} = case track of
     Vertical       -> if isVertical direction then Just cart else Nothing
     Horizontal     -> if isHorizontal direction then Just cart else Nothing
 
-tickCart :: V2 Int -> Cart -> Railway -> Either Crash Railway
-tickCart pos cart railway@MkRailway{..} =
-    if nextPos `Map.member` railCarts
-        then Left $ makeCrash Collision
-        else case nextCart of
-            Left sort  -> Left $ makeCrash sort
-            Right next ->
-                let updated = railway
-                        & #railCarts . at pos .~ Nothing
-                        & #railCarts . at nextPos ?~ next
-                in  Right updated
-  where
-    nextPos = pos + unitVecInDir (direction cart)
-    makeCrash sort = MkCrash
-        { position = nextPos
-        , crashSort = sort
-        , curState = railway
-            & #railCarts . at pos .~ Nothing
-            & #railCarts . at nextPos .~ Nothing
-        }
-    nextCart = do
-        track <- maybeToEither NoRails $ railTracks Map.!? nextPos
-        maybeToEither BadRails $ moveOn track cart
+tickCart :: V2 Int -> Cart -> State Railway (Maybe Crash)
+tickCart pos cart = do
+    MkRailway{..} <- State.get
+    if pos `Map.member` railCarts
+        then do
+            #railCarts . at pos .= Nothing
+            let next = pos + unitVecInDir (direction cart)
+            let other = do
+                    track <- maybeToEither NoRails $ railTracks Map.!? next
+                    maybeToEither BadRails $ moveOn track cart
+            if next `Map.member` railCarts
+                then do
+                    #railCarts . at next .= Nothing
+                    pure $ Just $ MkCrash next Collision
+                else case other of
+                    Left sort -> pure $ Just $ MkCrash next sort
+                    Right step -> do
+                        #railCarts . at next ?= step
+                        pure Nothing
+        else pure Nothing
 
-tick :: Railway -> Either Crash Railway
-tick railway@MkRailway{..} = foldM (flip $ uncurry tickCart) railway carts
+tick :: Railway -> Either Crashes Railway
+tick railway = bundle $ flip State.runState railway $ do
+    carts <- State.gets railCarts
+    let list = List.sortOn (fst .> view _yx) $ Map.toList carts
+    catMaybes <$> for list (uncurry tickCart)
   where
-    carts = List.sortOn (fst .> view _yx) $ Map.toList railCarts
+    bundle (crashes, updated) = case List.NE.nonEmpty crashes of
+        Just err -> Left $ MkCrashes err updated
+        Nothing  -> Right updated
 
-ticks :: Int -> Railway -> Either Crash Railway
+ticks :: Int -> Railway -> Either Crashes Railway
 ticks n
     | n <= 0    = pure
     | otherwise = tick >=> ticks (n - 1)
 
-tickUntilCrash :: Railway -> Crash
+tickUntilCrash :: Railway -> Crashes
 tickUntilCrash = tick .> either id tickUntilCrash
 
-part1 :: Railway -> (Int, Int)
-part1 = tickUntilCrash .> position .> (view _x &&& view _y)
+tickUntilCarts :: Int -> Railway -> Railway
+tickUntilCarts n railway = railway &
+    if length (railCarts railway) > n
+        then tickUntilCrash .> recover .> tickUntilCarts n
+        else id
+
+part1 :: Railway -> [(Int, Int)]
+part1 = tickUntilCrash
+    .> crashes
+    .> fmap (position .> asPair)
+    .> List.NE.toList
+  where
+    asPair = view _x &&& view _y
+
+part2 :: Railway -> Maybe (Int, Int)
+part2 = tickUntilCarts 1
+    .> railCarts
+    .> Map.keys
+    .> listToMaybe
+    .> fmap (view _x &&& view _y)
 
 main :: IO ()
 main = do
@@ -285,3 +313,4 @@ main = do
         Left err      -> die err
         Right railway -> do
             print $ part1 railway
+            print $ part2 railway
