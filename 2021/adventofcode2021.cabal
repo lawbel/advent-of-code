@@ -66,8 +66,8 @@ common common-lib-options
 library
     import: common-lib-options
     hs-source-dirs: src
+    other-modules: Paths_adventofcode2021
     exposed-modules:
-          Paths_adventofcode2021
         , Common
         , Day01
         , Day02
@@ -79,10 +79,9 @@ library adventofcode2021-tests
           adventofcode2021
         , tasty
         , tasty-hunit
-        , tasty-quickcheck
     exposed-modules:
           Test01
-          Test02
+        , Test02
 
 
 executable day-01
