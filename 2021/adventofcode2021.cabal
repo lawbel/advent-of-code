@@ -71,6 +71,7 @@ library
         , Common
         , Day01
         , Day02
+        , Day03
 
 library adventofcode2021-tests
     import: common-lib-options
@@ -79,9 +80,11 @@ library adventofcode2021-tests
         , adventofcode2021
         , tasty
         , tasty-hunit
+        , tasty-quickcheck
     exposed-modules:
         , Test01
         , Test02
+        , Test03
 
 
 executable day-01
@@ -94,6 +97,11 @@ executable day-02
     mixins: adventofcode2021 (Day02 as Day)
     main-is: Run.hs
 
+executable day-03
+    import: common-exe-options
+    mixins: adventofcode2021 (Day03 as Day)
+    main-is: Run.hs
+
 
 test-suite test-01
     import: common-test-options
@@ -104,5 +112,11 @@ test-suite test-01
 test-suite test-02
     import: common-test-options
     mixins: adventofcode2021-tests (Test02 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-03
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test03 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
