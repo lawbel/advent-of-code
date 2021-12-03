@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Day03 where
 
@@ -38,21 +38,28 @@ ifSetBit bool x i = if bool then Bits.setBit x i else x
 highestBitSet :: FiniteBits a => a -> Int
 highestBitSet x = Bits.finiteBitSize x - Bits.countLeadingZeros x - 1
 
-countBitsSet :: FiniteBits a => [a] -> [BitCount]
-countBitsSet = \case
-    [] -> []
-    list@(x : xs) -> do
-        let high = foldr max (highestBitSet x) (highestBitSet <$> xs)
-        bit <- [0 .. high]
-        let (set, unset) = List.partition (`Bits.testBit` bit) list
-        pure $ MkBitCount
-            { zeroes = length unset
-            , ones = length set
-            }
+highestBitSetIn :: FiniteBits a => [a] -> Int
+highestBitSetIn = \case
+    []     -> 0
+    x : xs -> foldr max (highestBitSet x) (highestBitSet <$> xs)
+
+countBitsAt :: FiniteBits a => Int -> [a] -> BitCount
+countBitsAt i list = MkBitCount
+    { zeroes = length unset
+    , ones = length set
+    }
+  where
+    (set, unset) = List.partition (`Bits.testBit` i) list
+
+countBits :: FiniteBits a => [a] -> [BitCount]
+countBits list = do
+    let high = highestBitSetIn list
+    bit <- [0 .. high]
+    pure $ countBitsAt bit list
 
 gammaEpsilon :: FiniteBits a => [a] -> Maybe (a, a)
 gammaEpsilon list = do
-    bools <- for (countBitsSet list) $ \MkBitCount{..} ->
+    bools <- for (countBits list) $ \MkBitCount{..} ->
         case zeroes `compare` ones of
             LT -> Just (True, False)
             EQ -> Nothing
@@ -62,10 +69,29 @@ gammaEpsilon list = do
     setBits = zip [0..] .> foldr setBit Bits.zeroBits
     setBit (i, bool) bits = ifSetBit bool bits i
 
+scrub :: FiniteBits a => (Int -> [a] -> a -> Bool) -> [a] -> Maybe a
+scrub criteria list = go (highestBitSetIn list) list
+  where
+    go i = \case
+        []  -> Nothing
+        [x] -> Just x
+        xs  -> go (i - 1) $ filter (criteria i xs) xs
+
+oxygen :: FiniteBits a => [a] -> Maybe a
+oxygen = scrub $ \i list ->
+    let MkBitCount{..} = countBitsAt i list
+    in  (`Bits.testBit` i) .> (if zeroes <= ones then id else not)
+
+co2 :: FiniteBits a => [a] -> Maybe a
+co2 = scrub $ \i list ->
+    let MkBitCount{..} = countBitsAt i list
+    in  (`Bits.testBit` i) .> (if zeroes <= ones then not else id)
+
 part1 :: (FiniteBits a, Num a) => [a] -> Maybe a
-part1 xs = do
-    (gamma, epsilon) <- gammaEpsilon xs
-    pure $ gamma * epsilon
+part1 list = uncurry (*) <$> gammaEpsilon list
+
+part2 :: (FiniteBits a, Num a) => [a] -> Maybe a
+part2 list = (*) <$> oxygen list <*> co2 list
 
 main :: IO ()
 main = do
@@ -73,4 +99,5 @@ main = do
     case getReports @Int text of
         Left err -> die err
         Right report -> do
-            putStrLn $ maybe "-" show $ part1 report
+            putStrLn $ maybe "???" show $ part1 report
+            putStrLn $ maybe "???" show $ part2 report

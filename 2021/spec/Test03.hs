@@ -23,6 +23,10 @@ unitTests :: TestTree
 unitTests = Tasty.testGroup "unit tests"
     [ HUnit.testCase "gammaEpsilon" $
         Day03.gammaEpsilon exampleReport @?= Just (22, 9)
+    , HUnit.testCase "oxygen" $
+        Day03.oxygen exampleReport @?= Just 23
+    , HUnit.testCase "co2" $
+        Day03.co2 exampleReport @?= Just 10
     ]
 
 propertyTests :: TestTree
