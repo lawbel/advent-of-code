@@ -27,7 +27,7 @@ common common-ghc-exe-options
 common common-lang-options
     default-language: Haskell2010
     default-extensions:
-          BinaryLiterals
+        , BinaryLiterals
         , ImportQualifiedPost
         , LambdaCase
         , NumericUnderscores
@@ -35,7 +35,7 @@ common common-lang-options
 
 common common-runtime-options
     import:
-          common-lang-options
+        , common-lang-options
         , common-ghc-exe-options
     hs-source-dirs: run
     build-depends: base
@@ -50,10 +50,10 @@ common common-test-options
 
 common common-lib-options
     import:
-          common-lang-options
+        , common-lang-options
         , common-ghc-lib-options
     build-depends:
-          base ^>=4.14
+        , base ^>=4.14
         , bytestring
         , flow
         , megaparsec
@@ -76,11 +76,11 @@ library adventofcode2021-tests
     import: common-lib-options
     hs-source-dirs: spec
     build-depends:
-          adventofcode2021
+        , adventofcode2021
         , tasty
         , tasty-hunit
     exposed-modules:
-          Test01
+        , Test01
         , Test02
 
 
