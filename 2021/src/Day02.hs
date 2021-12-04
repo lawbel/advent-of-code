@@ -54,7 +54,7 @@ parseCommands :: Num a => Parser [Command a]
 parseCommands = parseCommand `Par.sepEndBy` Par.Ch.newline
 
 getCommands :: Num a => Text -> Either String [Command a]
-getCommands = runParser (parseCommands <* Par.eof) "day-02"
+getCommands = runParser "day-02" (parseCommands <* Par.eof)
 
 run1 :: Num a => Command a -> Position a -> Position a
 run1 = \case

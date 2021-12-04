@@ -20,8 +20,8 @@ import Paths_adventofcode2021 (getDataFileName)
 
 type Parser a = Parsec Void Text a
 
-runParser :: Parser a -> String -> Text -> Either String a
-runParser parser desc = Par.parse parser desc .> first Par.errorBundlePretty
+runParser :: String -> Parser a -> Text -> Either String a
+runParser desc parser = Par.parse parser desc .> first Par.errorBundlePretty
 
 readFileUtf8 :: FilePath -> IO Text
 readFileUtf8 path = Text.Enc.decodeUtf8 <$> Byt.readFile path

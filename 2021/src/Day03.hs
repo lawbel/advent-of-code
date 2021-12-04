@@ -27,7 +27,7 @@ parseReport :: Num a => Parser [a]
 parseReport = Par.Ch.Lex.binary `Par.sepEndBy` Par.Ch.space
 
 getReports :: Num a => Text -> Either String [a]
-getReports = runParser (parseReport <* Par.eof) "day-03"
+getReports = runParser "day-03" (parseReport <* Par.eof)
 
 duomap :: Bifunctor f => (a -> b) -> f a a -> f b b
 duomap f = bimap f f

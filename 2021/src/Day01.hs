@@ -20,7 +20,7 @@ parseDepths :: Num a => Parser [a]
 parseDepths = Par.Ch.Lex.decimal `Par.sepEndBy` Par.Ch.newline
 
 getDepths :: Num a => Text -> Either String [a]
-getDepths = runParser (parseDepths <* Par.eof) "day-01"
+getDepths = runParser "day-01" (parseDepths <* Par.eof)
 
 increases :: Ord a => [a] -> [a]
 increases = \case
