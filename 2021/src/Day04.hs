@@ -11,7 +11,8 @@ module Day04 where
 
 import Control.Applicative (some)
 import Control.Monad (replicateM, guard)
-import Control.Monad.State (State, runState)
+import Control.Monad.State (State)
+import Control.Monad.State qualified as State
 import Data.List qualified as List
 import Data.Text (Text)
 import Data.Vector (Vector)
@@ -19,8 +20,8 @@ import Data.Vector qualified as Vec
 import Data.Vector.Algorithms.Merge qualified as Vec.Merge
 import Flow ((.>))
 import Linear (V2(V2))
-import Optics ((^.), (.~), (&), _2, view, zoom, over)
-import Optics.State.Operators ((<%=))
+import Optics ((^.), (.~), (%~), (&), _2, view, zoom, use, over)
+import Optics.State.Operators ((.=))
 import Optics.TH (noPrefixFieldLabels, makeFieldLabelsWith)
 import System.Exit (die)
 import Text.Megaparsec qualified as Par
@@ -46,7 +47,8 @@ makeFieldLabelsWith noPrefixFieldLabels ''Number
 
 data Bingo a = MkBingo
     { toCall :: [a]
-    , boardStates :: [Matrix (Number a)]
+    , players :: [Matrix (Number a)]
+    , winners :: [Matrix (Number a)]
     } deriving (Eq, Ord, Read, Show)
 
 makeFieldLabelsWith noPrefixFieldLabels ''Bingo
@@ -132,28 +134,44 @@ drawNumber x matrix = accumulate (&) matrix points
     points = (, draw) <$> findIndices (number .> (==) x) matrix
     draw = #status .~ Drawn
 
-drawUntilWinner :: Eq a => State (Bingo a) (Maybe a)
-drawUntilWinner = zoom #toCall pop >>= \case
+drawUntil :: Eq a => (Bingo a -> Bool) -> State (Bingo a) (Maybe a)
+drawUntil test = zoom #toCall pop >>= \case
     Nothing -> pure Nothing
     Just x  -> do
-        next <- #boardStates <%= fmap (drawNumber x)
-        if any isWinner next
-            then pure $ Just x
-            else drawUntilWinner
+        let splitWinners = fmap (drawNumber x) .> List.partition isWinner
+        (won, rest) <- splitWinners <$> use #players
+        #players .= rest
+        #winners <>= won
+        State.gets test >>= \case
+            True  -> pure $ Just x
+            False -> drawUntil test
 
-playBingo :: Eq a => [a] -> [Matrix a] -> (Maybe a, Bingo a)
-playBingo calls mats = runState drawUntilWinner $ MkBingo
+drawUntilAnyWinner :: Eq a => State (Bingo a) (Maybe a)
+drawUntilAnyWinner = drawUntil $ winners .> null .> not
+
+drawUntilAllWinners :: Eq a => State (Bingo a) (Maybe a)
+drawUntilAllWinners = drawUntil $ players .> null
+
+play :: State (Bingo a) b -> [a] -> [Matrix a] -> (b, Bingo a)
+play state calls boards = State.runState state $ MkBingo
     { toCall = calls
-    , boardStates = fffmap (`MkNumber` NotDrawn) mats
+    , players = fffmap (`MkNumber` NotDrawn) boards
+    , winners = []
     }
 
 part1 :: (Eq a, Num a) => [a] -> [Matrix a] -> Maybe a
-part1 calls mats =
-    case playBingo calls mats & getWinners of
-        (Just num, [board]) -> Just $ score board * num
-        _                   -> Nothing
+part1 calls boards =
+    case play drawUntilAnyWinner calls boards & _2 %~ winners of
+        (Just num, board : _) -> Just $ score board * num
+        _                     -> Nothing
+
+part2 :: (Eq a, Num a) => [a] -> [Matrix a] -> Maybe a
+part2 calls boards =
+    case play drawUntilAllWinners calls boards & lastWinner of
+        (Just num, board : _) -> Just $ score board * num
+        _                     -> Nothing
   where
-    getWinners = over _2 $ boardStates .> filter isWinner
+    lastWinner = over _2 $ winners .> reverse
 
 main :: IO ()
 main = do
@@ -162,3 +180,4 @@ main = do
         Left err -> die err
         Right (numbers, boards) -> do
             part1 numbers boards & maybe "???" show & putStrLn
+            part2 numbers boards & maybe "???" show & putStrLn

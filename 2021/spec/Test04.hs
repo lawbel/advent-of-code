@@ -1,6 +1,7 @@
 module Test04 where
 
 import Control.Applicative (ZipList(ZipList), getZipList, liftA2)
+import Data.Function ((&))
 import Data.Vector qualified as Vec
 import Flow ((.>))
 import Test.Tasty (TestTree)
@@ -101,16 +102,24 @@ unitTests = Tasty.testGroup "unit tests"
                         , [d, d, n, n, d]
                         ]
                     ]
-            , Tasty.testGroup "playBingo" $
-                let (lastCall, bingo) = Day04.playBingo
-                        exampleNumbers
-                        [board1, board2, board3]
-                    boards = Day04.boardStates bingo
+            , Tasty.testGroup "drawUntilAnyWinner" $
+                let play = Day04.play Day04.drawUntilAnyWinner
+                    (lastCall, bingo) =
+                        play exampleNumbers [board1, board2, board3]
                 in  [ HUnit.testCase "last number drawn" $
                         lastCall @?= Just 24
                     , HUnit.testCase "winning score" $
-                        fmap Day04.score (filter Day04.isWinner boards)
-                            @?= [188]
+                        fmap Day04.score (Day04.winners bingo) @?= [188]
+                    ]
+            , Tasty.testGroup "drawUntilAllWinners" $
+                let play = Day04.play Day04.drawUntilAllWinners
+                    (lastCall, bingo) =
+                        play exampleNumbers [board1, board2, board3]
+                    lastWinner = Day04.winners bingo & reverse & take 1
+                in  [ HUnit.testCase "last number drawn" $
+                        lastCall @?= Just 13
+                    , HUnit.testCase "winning score" $
+                        fmap Day04.score lastWinner @?= [148]
                     ]
             ]
     ]

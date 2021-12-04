@@ -37,11 +37,21 @@ readInputFileUtf8 = getDataFileName >=> readFileUtf8
 (+~) :: (Is k A_Setter, Num a) => Optic k is s t a a -> a -> s -> t
 optic +~ x = optic %~ (+ x)
 
+(+=) :: (Is k A_Setter, MonadState s m, Num a) => Optic' k is s a -> a -> m ()
+optic += x = optic %= (+ x)
+
 (-~) :: (Is k A_Setter, Num a) => Optic k is s t a a -> a -> s -> t
 optic -~ x = optic %~ subtract x
 
-(+=) :: (Is k A_Setter, MonadState s m, Num a) => Optic' k is s a -> a -> m ()
-optic += x = optic %= (+ x)
+(<>~) :: (Is k A_Setter, Semigroup a) => Optic k is s t a a -> a -> s -> t
+optic <>~ x = optic %~ (<> x)
+
+(<>=)
+    :: (Is k A_Setter, MonadState s m, Semigroup a)
+    => Optic' k is s a
+    -> a
+    -> m ()
+optic <>= x = optic %= (<> x)
 
 _x :: R1 f => Lens' (f a) a
 _x = Optics.lensVL Linear._x
