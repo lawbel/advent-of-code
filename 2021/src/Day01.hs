@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeApplications #-}
-
 module Day01 where
 
 import Data.Text (Text)

@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeApplications #-}
-
 module Test03 where
 
 import Flow ((.>))
