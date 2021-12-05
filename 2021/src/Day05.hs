@@ -94,6 +94,7 @@ plotDiagonalLines =
     fmap (uncurry plotDiagonalLine)
         .> foldr (Map.unionWith (+)) Map.empty
 
+{-# ANN prettyGrid ("HLINT: ignore" :: String) #-}
 prettyGrid :: (Enum a, Ord a) => Map (V2 a) Int -> Text
 prettyGrid lattice
     | null lattice = ""
