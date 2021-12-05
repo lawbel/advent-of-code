@@ -7,6 +7,7 @@ import Control.Monad.State (MonadState, get, put)
 import Data.Bifunctor (first)
 import Data.ByteString qualified as Byt
 import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text.Enc
 import Data.Void (Void)
 import Flow ((.>))
@@ -32,6 +33,9 @@ readFileUtf8 path = Text.Enc.decodeUtf8 <$> Byt.readFile path
 
 readInputFileUtf8 :: FilePath -> IO Text
 readInputFileUtf8 = getDataFileName >=> readFileUtf8
+
+textShow :: Show a => a -> Text
+textShow = show .> Text.pack
 
 
 (+~) :: (Is k A_Setter, Num a) => Optic k is s t a a -> a -> s -> t
