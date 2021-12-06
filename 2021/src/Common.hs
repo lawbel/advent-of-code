@@ -3,6 +3,7 @@
 module Common where
 
 import Control.Monad ((>=>))
+import Control.Monad.Reader (MonadReader, asks)
 import Control.Monad.State (MonadState, get, put)
 import Data.Bifunctor (first)
 import Data.ByteString qualified as Byt
@@ -13,7 +14,7 @@ import Data.Void (Void)
 import Flow ((.>))
 import Linear (R1, R2)
 import Linear qualified
-import Optics (A_Setter, Is, Optic, Optic', Lens', (%~))
+import Optics (A_Setter, A_Getter, Is, Optic, Optic', Lens', (%~), view)
 import Optics qualified
 import Optics.State.Operators ((%=))
 import Text.Megaparsec (Parsec)
@@ -36,6 +37,9 @@ readInputFileUtf8 = getDataFileName >=> readFileUtf8
 
 textShow :: Show a => a -> Text
 textShow = show .> Text.pack
+
+cons :: a -> [a] -> [a]
+cons x xs = x : xs
 
 
 (+~) :: (Is k A_Setter, Num a) => Optic k is s t a a -> a -> s -> t
@@ -62,6 +66,9 @@ _x = Optics.lensVL Linear._x
 
 _y :: R2 f => Lens' (f a) a
 _y = Optics.lensVL Linear._y
+
+seek :: (Is k A_Getter, MonadReader s m) => Optic' k is s a -> m a
+seek optic = asks (view optic)
 
 
 ffmap :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
