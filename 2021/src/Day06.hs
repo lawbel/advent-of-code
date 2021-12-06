@@ -12,7 +12,9 @@ module Day06 where
 
 import Control.Monad (replicateM_)
 import Control.Monad.Reader (ReaderT, runReaderT)
-import Control.Monad.State (State, runState)
+import Control.Monad.State (State, runState, get, put)
+import Data.Map (Map)
+import Data.Map qualified as Map
 import Data.Text (Text)
 import Flow ((.>))
 import Optics ((&), use, traversed, zoomMany)
@@ -69,8 +71,27 @@ day = zoomMany traversed $ do
             #timer .= d
             #children %= cons (mkFish i)
 
+add :: (Ord k, Num a) => [Map k a] -> Map k a
+add = foldr (Map.unionWith (+)) Map.empty
+
+partitionOnKey :: (k -> Bool) -> Map k a -> (Map k a, Map k a)
+partitionOnKey p = Map.partitionWithKey (p .> const)
+
+{-# ANN day' ("HLINT: ignore" :: String) #-}
+day' :: (Num a, Ord a) => Sea a (Map a Int) ()
+day' = do
+    fish <- Map.mapKeys (subtract 1) <$> get
+    let (keep, update) = partitionOnKey (>= 0) fish
+    d <- seek #delay
+    i <- seek #initial
+    let count = sum update
+    put $ add [keep, Map.singleton d count, Map.singleton i count]
+
 days :: (Num a, Ord a) => Int -> Sea a [Fish a] ()
 days n = replicateM_ n day
+
+days' :: (Num a, Ord a) => Int -> Sea a (Map a Int) ()
+days' n = replicateM_ n day'
 
 simulate :: (Num a, Ord a) => Int -> [a] -> Int
 simulate d ns = days d
@@ -78,8 +99,16 @@ simulate d ns = days d
     & fmap length
     & sum
 
+simulate' :: (Num a, Ord a) => Int -> [a] -> Int
+simulate' d ns = days' d
+    & execSea grow (add [Map.singleton n 1 | n <- ns])
+    & sum
+
 part1 :: (Num a, Ord a) => [a] -> Int
 part1 = simulate 80
+
+part2 :: (Num a, Ord a) => [a] -> Int
+part2 = simulate' 256
 
 main :: IO ()
 main = do
@@ -88,3 +117,4 @@ main = do
         Left err -> die err
         Right fish -> do
             print $ part1 fish
+            print $ part2 fish

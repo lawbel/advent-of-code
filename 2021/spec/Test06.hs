@@ -1,27 +1,31 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TupleSections #-}
 
 module Test06 where
 
 import Data.Foldable (toList)
 import Data.Function ((&))
 import Data.List qualified as List
+import Data.Map qualified as Map
 import Data.Text qualified as Text
 import Flow ((.>))
 import Test.Tasty (TestTree)
 import Test.Tasty qualified as Tasty
 import Test.Tasty.HUnit ((@?=))
 import Test.Tasty.HUnit qualified as HUnit
+import Test.Tasty.QuickCheck ((===))
+import Test.Tasty.QuickCheck qualified as Check
 import Text.InterpolatedString.Perl6 (qq)
 
-import Day06 qualified
 import Common
+import Day06 qualified
 
 
 main :: IO ()
 main = Tasty.defaultMain tests
 
 tests :: TestTree
-tests = Tasty.testGroup "tests" [unitTests]
+tests = Tasty.testGroup "tests" [unitTests, propertyTests]
 
 unitTests :: TestTree
 unitTests = Tasty.testGroup "unit tests"
@@ -68,6 +72,26 @@ afterManyDays = Tasty.testGroup "after many days"
         Day06.simulate 18 exampleInput @?= 26
     , HUnit.testCase "after 80 days" $
         Day06.simulate 80 exampleInput @?= 5934
+    ]
+
+propertyTests :: TestTree
+propertyTests = Tasty.testGroup "property tests"
+    [ Check.testProperty "day' == day" $
+        \(Check.Positive delay) (Check.Positive initial) ns' ->
+            let grow = Day06.MkGrowth delay initial
+                ns = fmap (Check.getPositive .> flip mod (delay + 1)) ns'
+                result = Day06.day @Int
+                    & Day06.execSea grow (Day06.mkFish <$> ns)
+                    & concatMap toList
+                result' = Day06.day'
+                    & Day06.execSea grow (Map.fromListWith (+) $ fmap (, 1) ns)
+                    & Map.toList
+                    & concatMap (uncurry $ flip replicate)
+            in  List.sort result === List.sort result'
+    , Check.testProperty "simulate' == simulate" $
+        \(Check.Positive d) ns' ->
+            let ns = (Check.getPositive .> flip mod 7) <$> ns'
+            in  Day06.simulate @Int d ns === Day06.simulate' d ns
     ]
 
 exampleInput :: [Int]
