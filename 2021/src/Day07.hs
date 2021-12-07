@@ -20,14 +20,25 @@ parseCrabs = Par.Ch.Lex.decimal `Par.NE.sepBy1` Par.Ch.char ','
 getCrabs :: Num a => Text -> Either String (NonEmpty a)
 getCrabs = runParser "day-07" $ parseCrabs <* Par.Ch.space <* Par.eof
 
-centre :: (Enum a, Ord a, Num a) => NonEmpty a -> (a, a)
-centre xs = minimumBy (comparing snd) $ do
-    i <- [minimum xs .. maximum xs]
-    let diff x = abs $ x - i
-    pure (i, sum $ fmap diff xs)
+triangle :: Integral a => a -> a
+triangle n = (n * (n + 1)) `div` 2
 
-part1 :: (Enum a, Ord a, Num a) => NonEmpty a -> a
-part1 = centre .> snd
+centerOn :: Integral a => (a -> a -> a) -> NonEmpty a -> (a, a)
+centerOn f xs = minimumBy (comparing snd) $ do
+    i <- [minimum xs .. maximum xs]
+    pure (i, sum $ fmap (f i) xs)
+
+center1 :: Integral a => NonEmpty a -> (a, a)
+center1 = centerOn $ \x y -> abs $ x - y
+
+part1 :: Integral a => NonEmpty a -> a
+part1 = center1 .> snd
+
+center2 :: Integral a => NonEmpty a -> (a, a)
+center2 = centerOn $ \x y -> triangle $ abs $ x - y
+
+part2 :: Integral a => NonEmpty a -> a
+part2 = center2 .> snd
 
 main :: IO ()
 main = do
@@ -36,3 +47,4 @@ main = do
         Left err -> die err
         Right crabs -> do
             print $ part1 crabs
+            print $ part2 crabs

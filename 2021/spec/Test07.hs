@@ -17,8 +17,8 @@ tests = Tasty.testGroup "tests" [unitTests]
 
 unitTests :: TestTree
 unitTests = Tasty.testGroup "unit tests"
-    [ HUnit.testCase "centre" $
-        Day07.centre exampleCrabs @?= (2, 37)
+    [ HUnit.testCase "centre1" $ Day07.center1 exampleCrabs @?= (2, 37)
+    , HUnit.testCase "centre2" $ Day07.center2 exampleCrabs @?= (5, 168)
     ]
 
 exampleCrabs :: NonEmpty Int
