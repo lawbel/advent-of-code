@@ -63,6 +63,7 @@ common common-lib-options
         , megaparsec
         , mtl
         , optics
+        , parser-combinators
         , text
         , vector
         , vector-algorithms
@@ -80,6 +81,7 @@ library
         , Day04
         , Day05
         , Day06
+        , Day07
 
 library adventofcode2021-tests
     import: common-lib-options
@@ -96,6 +98,7 @@ library adventofcode2021-tests
         , Test04
         , Test05
         , Test06
+        , Test07
 
 
 executable day-01
@@ -126,6 +129,11 @@ executable day-05
 executable day-06
     import: common-exe-options
     mixins: adventofcode2021 (Day06 as Day)
+    main-is: Run.hs
+
+executable day-07
+    import: common-exe-options
+    mixins: adventofcode2021 (Day07 as Day)
     main-is: Run.hs
 
 
@@ -162,5 +170,11 @@ test-suite test-05
 test-suite test-06
     import: common-test-options
     mixins: adventofcode2021-tests (Test06 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-07
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test07 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
