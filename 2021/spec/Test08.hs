@@ -1,9 +1,11 @@
 module Test08 where
 
 import Data.Bifunctor (bimap)
+import Data.Map qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
+import Data.Tuple (swap)
 import Flow ((.>))
 import Test.Tasty (TestTree)
 import Test.Tasty qualified as Tasty
@@ -23,15 +25,50 @@ tests = Tasty.testGroup "tests" [unitTests]
 unitTests :: TestTree
 unitTests = Tasty.testGroup "unit tests"
     [ HUnit.testCase "identifyByCount" $
-        let digits = Day08.outputValues .> mapMaybe Day08.identifyByCount
+        let digits = Day08.outputs .> mapMaybe Day08.identifyByCount
         in  length (concatMap digits exampleEntries) @?= 26
+    , HUnit.testCase "identify" $
+        let expected = Map.fromList $ fmap swap
+                [ (Day08.D8, Set.fromList [A, C, E, D, G, F, B])
+                , (Day08.D5, Set.fromList [C, D, F, B, E])
+                , (Day08.D2, Set.fromList [G, C, D, F, A])
+                , (Day08.D3, Set.fromList [F, B, C, A, D])
+                , (Day08.D7, Set.fromList [D, A, B])
+                , (Day08.D9, Set.fromList [C, E, F, A, B, D])
+                , (Day08.D6, Set.fromList [C, D, F, G, E, B])
+                , (Day08.D4, Set.fromList [E, A, F, B])
+                , (Day08.D0, Set.fromList [C, A, G, E, D, B])
+                , (Day08.D1, Set.fromList [A, B])
+                ]
+            actual = Day08.identify (Day08.signals exampleEntry)
+        in  fmap Day08.inverseMap actual @?= Just expected
+    , Tasty.testGroup "identifyEntry"
+        [ HUnit.testCase "first example" $
+            Day08.identifyEntry exampleEntry @?= Just 5353
+        , HUnit.testCase "larger example" $
+            let output = Just <$>
+                    [ 8394, 9781, 1197, 9361, 4873
+                    , 8418, 4548, 1625, 8717, 4315
+                    ]
+            in  Day08.identifyEntry <$> exampleEntries @?= output
+        ]
     ]
 
 fromLists :: Ord a => [[a]] -> Set (Set a)
 fromLists = fmap Set.fromList .> Set.fromList
 
+makeEntry :: ([[Segment]], [[Segment]]) -> Entry
+makeEntry = bimap (fmap Set.fromList) (fmap Set.fromList)
+    .> uncurry Day08.MkEntry
+
+exampleEntry :: Entry
+exampleEntry = makeEntry
+    ( [[A,C,E,D,G,F,B], [C,D,F,B,E], [G,C,D,F,A], [F,B,C,A,D], [D,A,B], [C,E,F,A,B,D], [C,D,F,G,E,B], [E,A,F,B], [C,A,G,E,D,B], [A,B]]
+    , [[C,D,F,E,B], [F,C,A,D,B], [C,D,F,E,B], [C,D,B,A,F]]
+    )
+
 exampleEntries :: [Entry]
-exampleEntries = fmap mkEntry
+exampleEntries = fmap makeEntry
     [ ( [[B,E], [C,F,B,E,G,A,D], [C,B,D,G,E,F], [F,G,A,E,C,D], [C,G,E,B], [F,D,C,G,E], [A,G,E,B,F,D], [F,E,C,D,B], [F,A,B,C,D], [E,D,B]]
       , [[F,D,G,A,C,B,E], [C,E,F,D,B], [C,E,F,B,G,D], [G,C,B,E]]
       )
@@ -63,6 +100,3 @@ exampleEntries = fmap mkEntry
       , [[F,G,A,E], [C,F,G,A,B], [F,G], [B,A,G,C,E]]
       )
     ]
-  where
-    mkEntry = bimap (fmap Set.fromList) (fmap Set.fromList)
-        .> uncurry Day08.MkEntry
