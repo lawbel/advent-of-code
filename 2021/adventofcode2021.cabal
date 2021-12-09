@@ -71,7 +71,9 @@ common common-lib-options
 
 library
     import: common-lib-options
-    hs-source-dirs: src
+    hs-source-dirs:
+        , src/main
+        , src/help
     other-modules: Paths_adventofcode2021
     exposed-modules:
         , Common
