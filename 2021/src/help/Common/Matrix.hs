@@ -1,21 +1,30 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
+
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Common.Matrix
     ( Matrix(MkMatrix, unMatrix)
+    , fromVectors
+
     , Fin(unFin)
     , next, prev
+
     , xMax, xMin, yMin, yMax
-    , xIndices, yIndices
-    , index
+    , xIndices, yIndices, index
     ) where
 
 import Data.Function ((&))
 import Data.Kind (Type)
+import Data.Vector (Vector)
 import Data.Vector qualified as Vec
 import GHC.TypeNats (Nat)
+import Instances.TH.Lift ()  -- provides @instance Lift Vector@
+import Language.Haskell.TH.Syntax (Lift)
 import Linear.V (V, Dim)
 import Linear.V qualified as V
 
@@ -23,12 +32,19 @@ import Linear.V qualified as V
 type Matrix :: Nat -> Nat -> Type -> Type
 newtype Matrix x y a = MkMatrix
     { unMatrix :: V y (V x a)
-    } deriving (Eq, Ord, Show)
+    } deriving (Eq, Ord, Show, Lift)
+
+deriving instance Lift a => Lift (V n a)  -- orphan instance
 
 type Fin :: Nat -> Type
 newtype Fin n = UnsafeMkFin
     { unFin :: Int
     } deriving (Eq, Ord, Show)
+
+fromVectors :: (Dim x, Dim y) => Vector (Vector a) -> Maybe (Matrix x y a)
+fromVectors outer = do
+    inner <- V.fromVector outer
+    MkMatrix <$> traverse V.fromVector inner
 
 next :: Dim n => Fin n -> Maybe (Fin n)
 next fin@(UnsafeMkFin num)

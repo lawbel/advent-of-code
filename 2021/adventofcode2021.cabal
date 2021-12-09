@@ -64,7 +64,9 @@ common common-lib-options
         , mtl
         , optics
         , parser-combinators
+        , template-haskell
         , text
+        , th-lift-instances
         , vector
         , vector-algorithms
 
