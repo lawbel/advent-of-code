@@ -11,10 +11,11 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text.Enc
 import Data.Void (Void)
-import Flow ((.>))
+import Flow ((.>), (<.))
 import Linear (R1, R2)
 import Linear qualified
-import Optics (A_Setter, A_Getter, Is, Optic, Optic', Lens', (%~), view)
+import Optics
+    ( A_Setter, A_Getter, An_AffineFold, Is, Optic, Optic', Lens', (%~) )
 import Optics qualified
 import Optics.State.Operators ((%=))
 import Text.Megaparsec (Parsec)
@@ -68,7 +69,10 @@ _y :: R2 f => Lens' (f a) a
 _y = Optics.lensVL Linear._y
 
 seek :: (Is k A_Getter, MonadReader s m) => Optic' k is s a -> m a
-seek optic = asks (view optic)
+seek optic = asks (Optics.view optic)
+
+is :: Is k An_AffineFold => Optic' k is s a -> s -> Bool
+is optic = not <. Optics.isn't optic
 
 
 ffmap :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)

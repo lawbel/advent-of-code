@@ -23,16 +23,16 @@ tests :: TestTree
 tests = Tasty.testGroup "tests" [unitTests]
 
 unitTests :: TestTree
-unitTests = Tasty.testGroup "unit tests" [corruptedTests]
+unitTests = Tasty.testGroup "unit tests" [corruptedTests, incompleteTests]
 
 corruptedTests :: TestTree
 corruptedTests = Tasty.testGroup "corrupted lines"
-    [ exampeLineTests
-    , scoreTests
+    [ corExampleLineTests
+    , corScoreTests
     ]
 
-exampeLineTests :: TestTree
-exampeLineTests = Tasty.testGroup "parse errors" $ do
+corExampleLineTests :: TestTree
+corExampleLineTests = Tasty.testGroup "parse errors" $ do
     (i, (text, eKind, aKind, _)) <- zip [1..] corrupted
     let actual = do
             line <- Par.parseMaybe Day10.parseLine text
@@ -45,8 +45,8 @@ exampeLineTests = Tasty.testGroup "parse errors" $ do
             }
     pure $ HUnit.testCase [qq|line {i :: Int}|] $ actual @?= Just expected
 
-scoreTests :: TestTree
-scoreTests = Tasty.testGroup "scores" $ do
+corScoreTests :: TestTree
+corScoreTests = Tasty.testGroup "scores" $ do
     (i, (text, _, _, expected)) <- zip [1..] corrupted
     let actual = do
             line <- Par.parseMaybe Day10.parseLine text
@@ -55,6 +55,30 @@ scoreTests = Tasty.testGroup "scores" $ do
             Day10.scoreCorrupted <$> preview _Right errType
     pure $ HUnit.testCase [qq|line {i :: Int}|] $ actual @?= Just expected
 
+incompleteTests :: TestTree
+incompleteTests = Tasty.testGroup "incomplete lines"
+    [ incExampleLineTests
+    , incScoreTests
+    ]
+
+incExampleLineTests :: TestTree
+incExampleLineTests = Tasty.testGroup "recovery" $ do
+    (i, (text, complete, _)) <- zip [1..] incomplete
+    let actual = do
+            line <- Par.parseMaybe Day10.parseLine text
+            pure $ line <> Day10.recoverIncomplete line
+    let expected = text <> complete
+    pure $ HUnit.testCase [qq|line {i :: Int}|] $
+        fmap Day10.prettyLine actual @?= Just expected
+
+incScoreTests :: TestTree
+incScoreTests = Tasty.testGroup "scores" $ do
+    (i, (text, _, score)) <- zip [1..] incomplete
+    let actual = do
+            line <- Par.parseMaybe Day10.parseLine text
+            pure $ Day10.scoreIncomplete $ Day10.recoverIncomplete line
+    pure $ HUnit.testCase [qq|line {i :: Int}|] $ actual @?= Just score
+
 corrupted :: [(Text, Kind, Kind, Int)]
 corrupted =
     [ ("{([(<{}[<>[]}>{[]{[(<()>", Day10.Square, Day10.Brace, 1197)
@@ -62,4 +86,13 @@ corrupted =
     , ("[{[{({}]{}}([{[{{{}}([]", Day10.Paren, Day10.Square, 57)
     , ("[<(<(<(<{}))><([]([]()", Day10.Angled, Day10.Paren, 3)
     , ("<{([([[(<>()){}]>(<<{{", Day10.Square, Day10.Angled, 25137)
+    ]
+
+incomplete :: [(Text, Text, Int)]
+incomplete =
+    [ ("[({(<(())[]>[[{[]{<()<>>", "}}]])})]", 288957)
+    , ("[(()[<>])]({[<{<<[]>>(", ")}>]})", 5566)
+    , ("(((({<>}<{<{<>}{[]{[]{}", "}}>}>))))", 1480781)
+    , ("{<[[]]>}<{[{[{[]{()[[[]", "]]}}]}]}>", 995444)
+    , ("<{([{{}}[<[[[<>{}]]]>[]]", "])}>", 294)
     ]
