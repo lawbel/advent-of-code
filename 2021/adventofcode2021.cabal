@@ -90,6 +90,7 @@ library
         , Day08
         , Day09
         , Day10
+        , Day11
 
 library adventofcode2021-tests
     import: common-lib-options
@@ -110,6 +111,7 @@ library adventofcode2021-tests
         , Test08
         , Test09
         , Test10
+        , Test11
 
 
 executable day-01
@@ -160,6 +162,11 @@ executable day-09
 executable day-10
     import: common-exe-options
     mixins: adventofcode2021 (Day10 as Day)
+    main-is: Run.hs
+
+executable day-11
+    import: common-exe-options
+    mixins: adventofcode2021 (Day11 as Day)
     main-is: Run.hs
 
 
@@ -220,5 +227,11 @@ test-suite test-09
 test-suite test-10
     import: common-test-options
     mixins: adventofcode2021-tests (Test10 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-11
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test11 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0

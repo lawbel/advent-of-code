@@ -1,38 +1,46 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Common.Matrix
     ( Matrix(MkMatrix, unMatrix)
     , fromVectors
+    , liftMatrix
 
     , Fin(unFin)
     , next, prev
 
     , xMax, xMin, yMin, yMax
-    , xIndices, yIndices, index
+    , xIndices, yIndices
+    , index, update
     ) where
 
 import Data.Function ((&))
 import Data.Kind (Type)
+import Data.Maybe (fromJust)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vec
+import Flow ((.>))
 import GHC.TypeNats (Nat)
 import Instances.TH.Lift ()  -- provides @instance Lift Vector@
-import Language.Haskell.TH.Syntax (Lift)
+import Language.Haskell.TH.Syntax (Lift, Q, TExp, liftTyped)
 import Linear.V (V, Dim)
 import Linear.V qualified as V
+import Optics (Lens', A_Lens, lens)
+import Optics.At (Index, IxValue, IxKind, Ixed, ix)
 
 
 type Matrix :: Nat -> Nat -> Type -> Type
 newtype Matrix x y a = MkMatrix
     { unMatrix :: V y (V x a)
-    } deriving (Eq, Ord, Show, Lift)
+    } deriving (Eq, Functor, Ord, Show, Lift)
 
 deriving instance Lift a => Lift (V n a)  -- orphan instance
 
@@ -45,6 +53,14 @@ fromVectors :: (Dim x, Dim y) => Vector (Vector a) -> Maybe (Matrix x y a)
 fromVectors outer = do
     inner <- V.fromVector outer
     MkMatrix <$> traverse V.fromVector inner
+
+liftMatrix :: (Dim x, Dim y, Lift a) => [[a]] -> Q (TExp (Matrix x y a))
+liftMatrix =
+    fmap Vec.fromList
+        .> Vec.fromList
+        .> fromVectors
+        .> fromJust
+        .> liftTyped
 
 next :: Dim n => Fin n -> Maybe (Fin n)
 next fin@(UnsafeMkFin num)
@@ -59,10 +75,30 @@ prev (UnsafeMkFin num)
     | otherwise = Nothing
 
 index :: Fin x -> Fin y -> Matrix x y a -> a
-index xFin yFin (MkMatrix matrix) =
-    matrix & get (unFin yFin) & get (unFin xFin)
+index (unFin -> xFin) (unFin -> yFin) (MkMatrix matrix) =
+    matrix & get yFin & get xFin
   where
     get n vec = V.toVector vec Vec.! n
+
+update :: Fin x -> Fin y -> a -> Matrix x y a -> Matrix x y a
+update (unFin -> xFin) (unFin -> yFin) val (MkMatrix matrix) =
+    MkMatrix $ fmap V.V $ V.V $ Vec.unsafeUpd asVecs
+        [ ( yFin
+          , Vec.unsafeUpd (asVecs Vec.! yFin) [(xFin, val)]
+          )
+        ]
+  where
+    asVecs = matrix & V.toVector & fmap V.toVector
+
+indexed :: Fin x -> Fin y -> Lens' (Matrix x y a) a
+indexed xFin yFin = lens (index xFin yFin) $ flip (update xFin yFin)
+
+type instance Index (Matrix x y a) = (Fin x, Fin y)
+type instance IxValue (Matrix x y a) = a
+
+instance Ixed (Matrix x y a) where
+    type IxKind (Matrix x y a) = A_Lens
+    ix (xFin, yFin) = indexed xFin yFin
 
 xMin :: Matrix x y a -> Fin x
 xMin _ = UnsafeMkFin 0
