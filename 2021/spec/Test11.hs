@@ -5,6 +5,7 @@
 
 module Test11 where
 
+import Control.Arrow ((&&&))
 import Test.Tasty (TestTree)
 import Test.Tasty qualified as Tasty
 import Test.Tasty.HUnit ((@?=))
@@ -29,7 +30,7 @@ unitTests = Tasty.testGroup "unit tests"
 smallExample :: TestTree
 smallExample = Tasty.testGroup "5x5 example"
     [ HUnit.testCase "after 0 steps" $
-        fst (Day11.flashes 0 example5x5 9) @?= example5x5
+        Day11.matrix (Day11.flashes 0 example5x5 9) @?= example5x5
     , HUnit.testCase "after 1 steps" $
         let after1 :: Matrix 5 5 Int =
                 $$(
@@ -41,7 +42,7 @@ smallExample = Tasty.testGroup "5x5 example"
                         , [3, 4, 5, 4, 3]
                         ]
                 )
-        in  fst (Day11.flashes 1 example5x5 9) @?= after1
+        in  Day11.matrix (Day11.flashes 1 example5x5 9) @?= after1
     , HUnit.testCase "after 2 steps" $
         let after2 :: Matrix 5 5 Int =
                 $$(
@@ -53,13 +54,14 @@ smallExample = Tasty.testGroup "5x5 example"
                         , [4, 5, 6, 5, 4]
                         ]
                 )
-        in  fst (Day11.flashes 2 example5x5 9) @?= after2
+        in  Day11.matrix (Day11.flashes 2 example5x5 9) @?= after2
     ]
 
 bigExample :: TestTree
 bigExample = Tasty.testGroup "10x10 example"
     [ HUnit.testCase "after   0 steps" $
-        Day11.flashes 0 example10x10 9 @?= (example10x10, 0)
+        let view = Day11.matrix &&& Day11.count
+        in  view (Day11.flashes 0 example10x10 9) @?= (example10x10, 0)
     , HUnit.testCase "after   1 steps" $
         let after1 :: Matrix 10 10 Int =
                 $$(
@@ -76,7 +78,7 @@ bigExample = Tasty.testGroup "10x10 example"
                         , [6, 3, 9, 4, 8, 6, 2, 6, 3, 7]
                         ]
                 )
-        in  fst (Day11.flashes 1 example10x10 9) @?= after1
+        in  Day11.matrix (Day11.flashes 1 example10x10 9) @?= after1
     , HUnit.testCase "after   3 steps" $
         let after3 :: Matrix 10 10 Int =
                 $$(
@@ -93,7 +95,7 @@ bigExample = Tasty.testGroup "10x10 example"
                         , [0, 0, 2, 1, 1, 1, 9, 0, 0, 0]
                         ]
                 )
-        in  fst (Day11.flashes 3 example10x10 9) @?= after3
+        in  Day11.matrix (Day11.flashes 3 example10x10 9) @?= after3
     , HUnit.testCase "after   6 steps" $
         let after6 :: Matrix 10 10 Int =
                 $$(
@@ -110,9 +112,10 @@ bigExample = Tasty.testGroup "10x10 example"
                         , [3, 3, 5, 4, 4, 5, 2, 4, 3, 3]
                         ]
                 )
-        in  fst (Day11.flashes 6 example10x10 9) @?= after6
+        in  Day11.matrix (Day11.flashes 6 example10x10 9) @?= after6
     , HUnit.testCase "after  10 steps" $
-        let after10 :: Matrix 10 10 Int =
+        let view = Day11.matrix &&& Day11.count
+            after10 :: Matrix 10 10 Int =
                 $$(
                     liftMatrix
                         [ [0, 4, 8, 1, 1, 1, 2, 9, 7, 6]
@@ -127,7 +130,7 @@ bigExample = Tasty.testGroup "10x10 example"
                         , [0, 0, 3, 2, 2, 4, 0, 0, 0, 0]
                         ]
                 )
-        in  Day11.flashes 10 example10x10 9 @?= (after10, 204)
+        in  view (Day11.flashes 10 example10x10 9) @?= (after10, 204)
     , HUnit.testCase "after  30 steps" $
         let after30 :: Matrix 10 10 Int =
                 $$(
@@ -144,7 +147,7 @@ bigExample = Tasty.testGroup "10x10 example"
                         , [7, 9, 4, 4, 4, 4, 6, 1, 1, 9]
                         ]
                 )
-        in  fst (Day11.flashes 30 example10x10 9) @?= after30
+        in  Day11.matrix (Day11.flashes 30 example10x10 9) @?= after30
     , HUnit.testCase "after  70 steps" $
         let after70 :: Matrix 10 10 Int =
                 $$(
@@ -161,9 +164,10 @@ bigExample = Tasty.testGroup "10x10 example"
                         , [4, 5, 7, 2, 2, 2, 2, 7, 5, 4]
                         ]
                 )
-        in  fst (Day11.flashes 70 example10x10 9) @?= after70
+        in  Day11.matrix (Day11.flashes 70 example10x10 9) @?= after70
     , HUnit.testCase "after 100 steps" $
-        let after100 :: Matrix 10 10 Int =
+        let view = Day11.matrix &&& Day11.count
+            after100 :: Matrix 10 10 Int =
                 $$(
                     liftMatrix
                         [ [0, 3, 9, 7, 6, 6, 6, 8, 6, 6]
@@ -178,7 +182,13 @@ bigExample = Tasty.testGroup "10x10 example"
                         , [6, 7, 8, 9, 9, 9, 8, 7, 6, 6]
                         ]
                 )
-        in  Day11.flashes 100 example10x10 9 @?= (after100, 1656)
+        in  view (Day11.flashes 100 example10x10 9) @?= (after100, 1656)
+    , HUnit.testCase "until all flashed" $
+        let view = Day11.matrix &&& Day11.step
+            allZero :: Matrix 10 10 Int =
+                $$(liftMatrix $ replicate 10 $ replicate 10 0)
+        in  view (Day11.flashUntil (all (== 0)) example10x10 9)
+                @?= (allZero, 195)
     ]
 
 example5x5 :: Matrix 5 5 Int

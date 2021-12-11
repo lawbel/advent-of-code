@@ -24,7 +24,7 @@ import Flow ((.>))
 import GHC.TypeNats (Nat)
 import Linear.V (V, Dim)
 import Linear.V qualified as V
-import Optics ((%), (&), use, ix, view, mapped, _2)
+import Optics ((%), (&), use, ix, mapped)
 import Optics.State.Operators ((%=), (.=))
 import Optics.TH (noPrefixFieldLabels, makeFieldLabelsWith)
 import System.Exit (die)
@@ -33,7 +33,6 @@ import Text.Megaparsec.Char qualified as Par.Ch
 
 import Common
 import Common.Matrix
-import Control.Arrow ((&&&))
 
 
 -- types
@@ -42,6 +41,7 @@ data Step x y a = MkStep
     { flashed :: Set (Fin x, Fin y)
     , matrix :: Matrix x y a
     , count :: Int
+    , step :: Int
     } deriving (Eq, Ord, Show)
 
 makeFieldLabelsWith noPrefixFieldLabels ''Step
@@ -81,16 +81,15 @@ adjacent xFin yFin = do
     guard $ (xAdj /= xFin) || (yAdj /= yFin)
     pure (xAdj, yAdj)
 
-flash
-    :: (Dim x, Dim y, Num a, Ord a)
-    => a -> Matrix x y a -> (Matrix x y a, Int)
-flash level grid = (view #matrix &&& view #count) $
-    flip execState (MkStep Set.empty grid 0) do
+flash :: (Dim x, Dim y, Num a, Ord a) => a -> Matrix x y a -> Step x y a
+flash level grid =
+    flip execState (MkStep Set.empty grid 0 0) do
         #matrix % mapped += 1
         flashLoops level
         use #flashed >>= traverse_ \pt -> do
             #matrix % ix pt .= 0
             #count += 1
+        #step += 1
 
 flashLoops :: (Dim x, Dim y, Num a, Ord a) => a -> State (Step x y a) ()
 flashLoops level = do
@@ -117,15 +116,35 @@ iter n f
     | n <= 0    = id
     | otherwise = f .> iter (n - 1) f
 
+iterUntil :: (a -> Bool) -> (a -> a) -> a -> a
+iterUntil cond f x
+    | cond x    = x
+    | otherwise = iterUntil cond f (f x)
+
 flashes
     :: (Dim x, Dim y, Num a, Ord a)
-    => Int -> Matrix x y a -> a -> (Matrix x y a, Int)
-flashes n grid level = iter n step (grid, 0)
+    => Int -> Matrix x y a -> a -> Step x y a
+flashes n grid level = iter n go $ MkStep undefined grid 0 0
   where
-    step (mat, num) = flash level mat & _2 +~ num
+    go before = flash level (matrix before)
+        & #step +~ step before
+        & #count +~ count before
+
+flashUntil
+    :: (Dim x, Dim y, Num a, Ord a)
+    => (Matrix x y a -> Bool) -> Matrix x y a -> a -> Step x y a
+flashUntil cond grid level =
+    iterUntil (matrix .> cond) go $ MkStep undefined grid 0 0
+  where
+    go before = flash level (matrix before)
+        & #step +~ step before
+        & #count +~ count before
 
 part1 :: (Dim x, Dim y, Num a, Ord a) => Matrix x y a -> Int
-part1 grid = snd $ flashes 100 grid 9
+part1 grid = count $ flashes 100 grid 9
+
+part2 :: (Dim x, Dim y, Num a, Ord a) => Matrix x y a -> Int
+part2 grid = step $ flashUntil (all (== 0)) grid 9
 
 -- main
 
@@ -136,3 +155,4 @@ main = do
         Left err -> die err
         Right grid -> do
             print $ part1 grid
+            print $ part2 grid

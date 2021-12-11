@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE PolyKinds #-}
@@ -40,7 +41,7 @@ import Optics.At (Index, IxValue, IxKind, Ixed, ix)
 type Matrix :: Nat -> Nat -> Type -> Type
 newtype Matrix x y a = MkMatrix
     { unMatrix :: V y (V x a)
-    } deriving (Eq, Functor, Ord, Show, Lift)
+    } deriving (Eq, Foldable, Functor, Ord, Show, Lift)
 
 deriving instance Lift a => Lift (V n a)  -- orphan instance
 
