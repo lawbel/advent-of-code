@@ -19,7 +19,7 @@ tests :: TestTree
 tests = Tasty.testGroup "tests" [unitTests]
 
 unitTests :: TestTree
-unitTests = Tasty.testGroup "unit tests" [pathTests]
+unitTests = Tasty.testGroup "unit tests" [pathTests, pathGivenTests]
 
 pathTests :: TestTree
 pathTests = Tasty.testGroup "makePathsBetween"
@@ -36,8 +36,8 @@ pathTests = Tasty.testGroup "makePathsBetween"
                 , ["start", "b", "A", "end"]
                 , ["start", "b", "end"]
                 ]
-        in  List.sort (Day12.makePathsBetween "start" "end" example1) @?=
-                List.sort paths
+        in  List.sort (Day12.makePathsBetween "start" "end" example1)
+                @?= List.sort paths
     , HUnit.testCase "example two" $
         let paths =
                 [ ["start", "HN", "dc", "HN", "end"]
@@ -60,10 +60,59 @@ pathTests = Tasty.testGroup "makePathsBetween"
                 , ["start", "kj", "dc", "HN", "end"]
                 , ["start", "kj", "dc", "end"]
                 ]
-        in  List.sort (Day12.makePathsBetween "start" "end" example2) @?=
-                List.sort paths
+        in  List.sort (Day12.makePathsBetween "start" "end" example2)
+                @?= List.sort paths
     , HUnit.testCase "example three" $
         length (Day12.makePathsBetween "start" "end" example3) @?= 226
+    ]
+
+pathGivenTests :: TestTree
+pathGivenTests = Tasty.testGroup "makePathsBetweenGiven"
+    [ HUnit.testCase "example one" $
+        let paths =
+                [ ["start", "A", "b", "A", "b", "A", "c", "A", "end"]
+                , ["start", "A", "b", "A", "b", "A", "end"]
+                , ["start", "A", "b", "A", "b", "end"]
+                , ["start", "A", "b", "A", "c", "A", "b", "A", "end"]
+                , ["start", "A", "b", "A", "c", "A", "b", "end"]
+                , ["start", "A", "b", "A", "c", "A", "c", "A", "end"]
+                , ["start", "A", "b", "A", "c", "A", "end"]
+                , ["start", "A", "b", "A", "end"]
+                , ["start", "A", "b", "d", "b", "A", "c", "A", "end"]
+                , ["start", "A", "b", "d", "b", "A", "end"]
+                , ["start", "A", "b", "d", "b", "end"]
+                , ["start", "A", "b", "end"]
+                , ["start", "A", "c", "A", "b", "A", "b", "A", "end"]
+                , ["start", "A", "c", "A", "b", "A", "b", "end"]
+                , ["start", "A", "c", "A", "b", "A", "c", "A", "end"]
+                , ["start", "A", "c", "A", "b", "A", "end"]
+                , ["start", "A", "c", "A", "b", "d", "b", "A", "end"]
+                , ["start", "A", "c", "A", "b", "d", "b", "end"]
+                , ["start", "A", "c", "A", "b", "end"]
+                , ["start", "A", "c", "A", "c", "A", "b", "A", "end"]
+                , ["start", "A", "c", "A", "c", "A", "b", "end"]
+                , ["start", "A", "c", "A", "c", "A", "end"]
+                , ["start", "A", "c", "A", "end"]
+                , ["start", "A", "end"]
+                , ["start", "b", "A", "b", "A", "c", "A", "end"]
+                , ["start", "b", "A", "b", "A", "end"]
+                , ["start", "b", "A", "b", "end"]
+                , ["start", "b", "A", "c", "A", "b", "A", "end"]
+                , ["start", "b", "A", "c", "A", "b", "end"]
+                , ["start", "b", "A", "c", "A", "c", "A", "end"]
+                , ["start", "b", "A", "c", "A", "end"]
+                , ["start", "b", "A", "end"]
+                , ["start", "b", "d", "b", "A", "c", "A", "end"]
+                , ["start", "b", "d", "b", "A", "end"]
+                , ["start", "b", "d", "b", "end"]
+                , ["start", "b", "end"]
+                ]
+        in  List.sort (Day12.makePathsBetweenGiven 1 "start" "end" example1)
+                @?= List.sort paths
+    , HUnit.testCase "example two" $
+        length (Day12.makePathsBetweenGiven 1 "start" "end" example2) @?= 103
+    , HUnit.testCase "example three" $
+        length (Day12.makePathsBetweenGiven 1 "start" "end" example3) @?= 3509
     ]
 
 example1 :: [(Text, Text)]
