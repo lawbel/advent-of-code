@@ -3,17 +3,15 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedLabels #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Day11 where
 
-import Control.Monad (replicateM, guard)
+import Control.Monad (replicateM, guard, unless, when)
 import Control.Monad.State (State, get, execState)
 import Data.Char qualified as Char
-import Data.Data (Proxy(Proxy))
 import Data.Foldable (for_, traverse_)
 import Data.Maybe (catMaybes)
 import Data.Set (Set)
@@ -21,7 +19,6 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Vector qualified as Vec
 import Flow ((.>))
-import GHC.TypeNats (Nat)
 import Linear.V (V, Dim)
 import Linear.V qualified as V
 import Optics ((%), (&), use, ix, mapped)
@@ -51,25 +48,21 @@ makeFieldLabelsWith noPrefixFieldLabels ''Step
 parseDecimalDigit :: Num a => Parser a
 parseDecimalDigit = fmap (Char.digitToInt .> fromIntegral) Par.Ch.digitChar
 
-parseRow :: forall (n :: Nat) a. Dim n => Num a => Parser (V n a)
+parseRow :: Num a => Parser (V 10 a)
 parseRow = do
-    digits <- replicateM dim parseDecimalDigit
+    digits <- replicateM 10 parseDecimalDigit
     case V.fromVector $ Vec.fromList digits of
         Just vec -> pure vec
         Nothing  -> fail "bad row length"
-  where
-    dim = V.reflectDim $ Proxy @n
 
-parseGrid :: forall x y a. (Dim x, Dim y, Num a) => Parser (Matrix x y a)
+parseGrid :: Num a => Parser (Matrix 10 10 a)
 parseGrid = do
-    digits <- replicateM yDim (parseRow <* Par.Ch.eol)
+    digits <- replicateM 10 (parseRow <* Par.Ch.eol)
     case V.fromVector $ Vec.fromList digits of
         Just vec -> pure $ MkMatrix vec
         Nothing  -> fail "bad grid length"
-  where
-    yDim = V.reflectDim $ Proxy @y
 
-getGrid :: (Dim x, Dim y, Num a) => Text -> Either String (Matrix x y a)
+getGrid :: Num a => Text -> Either String (Matrix 10 10 a)
 getGrid = runParser "day-11" $ parseGrid <* Par.Ch.space <* Par.eof
 
 -- logic
@@ -96,7 +89,7 @@ flashLoops level = do
     before <- get
     flashLoop level
     after <- get
-    if before == after then pure () else flashLoops level
+    unless (before == after) $ flashLoops level
 
 flashLoop :: (Dim x, Dim y, Num a, Ord a) => a -> State (Step x y a) ()
 flashLoop level = do
@@ -105,11 +98,9 @@ flashLoop level = do
     for_ pts \pt -> do
         seen <- Set.member pt <$> use #flashed
         val <- use $ #matrix % ix pt
-        if not seen && (val > level)
-            then do
-                #flashed %= Set.insert pt
-                for_ (uncurry adjacent pt) \nbr -> #matrix % ix nbr += 1
-            else pure ()
+        when (not seen && val > level) do
+            #flashed %= Set.insert pt
+            for_ (uncurry adjacent pt) \nbr -> #matrix % ix nbr += 1
 
 iter :: Int -> (a -> a) -> a -> a
 iter n f
@@ -124,7 +115,7 @@ iterUntil cond f x
 flashes
     :: (Dim x, Dim y, Num a, Ord a)
     => Int -> Matrix x y a -> a -> Step x y a
-flashes n grid level = iter n go $ MkStep undefined grid 0 0
+flashes n grid level = iter n go $ MkStep Set.empty grid 0 0
   where
     go before = flash level (matrix before)
         & #step +~ step before
@@ -134,7 +125,7 @@ flashUntil
     :: (Dim x, Dim y, Num a, Ord a)
     => (Matrix x y a -> Bool) -> Matrix x y a -> a -> Step x y a
 flashUntil cond grid level =
-    iterUntil (matrix .> cond) go $ MkStep undefined grid 0 0
+    iterUntil (matrix .> cond) go $ MkStep Set.empty grid 0 0
   where
     go before = flash level (matrix before)
         & #step +~ step before
@@ -151,7 +142,7 @@ part2 grid = step $ flashUntil (all (== 0)) grid 9
 main :: IO ()
 main = do
     text <- readInputFileUtf8 "input/day-11.txt"
-    case getGrid @10 @10 @Int text of
+    case getGrid @Int text of
         Left err -> die err
         Right grid -> do
             print $ part1 grid

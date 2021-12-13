@@ -22,10 +22,7 @@ tests :: TestTree
 tests = Tasty.testGroup "tests" [unitTests]
 
 unitTests :: TestTree
-unitTests = Tasty.testGroup "unit tests"
-    [ smallExample
-    , bigExample
-    ]
+unitTests = Tasty.testGroup "unit tests" [smallExample, bigExample]
 
 smallExample :: TestTree
 smallExample = Tasty.testGroup "5x5 example"
