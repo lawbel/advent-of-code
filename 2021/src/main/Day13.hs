@@ -68,14 +68,14 @@ getInput = runParser "day-13" $ parseInput <* Par.eof
 
 -- pretty printing
 
-prettyGrid :: (Ord a, Enum a) => [V2 a] -> Text
-prettyGrid points
+prettyGrid :: (Ord a, Enum a) => Char -> Char -> [V2 a] -> Text
+prettyGrid yes no points
     | null points = ""
     | otherwise   = Text.intercalate "\n" $ do
         y <- [yMin .. yMax]
         pure $ Text.pack $ do
             x <- [xMin .. xMax]
-            pure $ if V2 x y `Set.member` pointsSet then '#' else '.'
+            pure $ if V2 x y `Set.member` pointsSet then yes else no
   where
     (xMin, xMax) = (minimum &&& maximum) (view _x <$> points)
     (yMin, yMax) = (minimum &&& maximum) (view _y <$> points)
@@ -99,7 +99,7 @@ part1 :: (Ord a, Num a) => [V2 a] -> [Fold a] -> Int
 part1 points folds = length $ applyFolds (take 1 folds) points
 
 part2 :: (Ord a, Num a, Enum a) => [V2 a] -> [Fold a] -> Text
-part2 points folds = prettyGrid $ applyFolds folds points
+part2 points folds = prettyGrid '█' ' ' $ applyFolds folds points
 
 main :: IO ()
 main = do

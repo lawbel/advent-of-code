@@ -39,7 +39,7 @@ unitTests = Tasty.testGroup "unit tests"
                 , "#.........."
                 , "#.#........"
                 ]
-        in  Day13.prettyGrid examplePoints @?= expected
+        in  Day13.prettyGrid '#' '.' examplePoints @?= expected
     , HUnit.testCase "after y fold" $
         let expected = Text.intercalate "\n"
                 [ "#.##..#..#."
@@ -49,7 +49,7 @@ unitTests = Tasty.testGroup "unit tests"
                 , ".#.#..#.###"
                 ]
             actual = Day13.applyFolds (take 1 exampleFolds) examplePoints
-        in  Day13.prettyGrid actual @?= expected
+        in  Day13.prettyGrid '#' '.' actual @?= expected
     , HUnit.testCase "after x and y folds" $
         let expected = Text.intercalate "\n"
                 [ "#####"
@@ -59,7 +59,7 @@ unitTests = Tasty.testGroup "unit tests"
                 , "#####"
                 ]
             actual = Day13.applyFolds exampleFolds examplePoints
-        in  Day13.prettyGrid actual @?= expected
+        in  Day13.prettyGrid '#' '.' actual @?= expected
     ]
 
 examplePoints :: [V2 Int]
