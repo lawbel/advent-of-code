@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -26,6 +27,7 @@ module Common.Matrix
 import Data.Function ((&))
 import Data.Kind (Type)
 import Data.Maybe (fromJust)
+import Data.Proxy (Proxy(Proxy))
 import Data.Vector (Vector)
 import Data.Vector qualified as Vec
 import Flow ((.>))
@@ -41,9 +43,29 @@ import Optics.At (Index, IxValue, IxKind, Ixed, ix)
 type Matrix :: Nat -> Nat -> Type -> Type
 newtype Matrix x y a = MkMatrix
     { unMatrix :: V y (V x a)
-    } deriving (Eq, Foldable, Functor, Ord, Show, Lift)
+    } deriving (Eq, Foldable, Functor, Lift, Ord, Show)
 
 deriving instance Lift a => Lift (V n a)  -- orphan instance
+
+instance (Dim x, Dim y) => Applicative (Matrix x y) where
+    pure = Vec.replicate (V.reflectDim $ Proxy @x)
+        .> Vec.replicate (V.reflectDim $ Proxy @y)
+        .> fmap V.V
+        .> V.V
+        .> MkMatrix
+
+    funs <*> vals = MkMatrix $ do
+        yFin <- V.V $ Vec.fromList $ yIndices vals
+        pure $ do
+            xFin <- V.V $ Vec.fromList $ xIndices vals
+            pure $ index xFin yFin funs $ index xFin yFin vals
+
+type instance Index (Matrix x y a) = (Fin x, Fin y)
+type instance IxValue (Matrix x y a) = a
+
+instance Ixed (Matrix x y a) where
+    type IxKind (Matrix x y a) = A_Lens
+    ix (xFin, yFin) = indexed xFin yFin
 
 type Fin :: Nat -> Type
 newtype Fin n = UnsafeMkFin
@@ -81,25 +103,21 @@ index (unFin -> xFin) (unFin -> yFin) (MkMatrix matrix) =
   where
     get n vec = V.toVector vec Vec.! n
 
+set :: Int -> Vector a -> a -> Vector a
+set n vec x = vec Vec.// [(n, x)]
+
 update :: Fin x -> Fin y -> a -> Matrix x y a -> Matrix x y a
 update (unFin -> xFin) (unFin -> yFin) val (MkMatrix matrix) =
-    MkMatrix $ fmap V.V $ V.V $ Vec.unsafeUpd asVecs
-        [ ( yFin
-          , Vec.unsafeUpd (asVecs Vec.! yFin) [(xFin, val)]
-          )
-        ]
+    MkMatrix
+        $ V.V
+        $ fmap V.V
+        $ set yFin asVecs
+        $ set xFin (asVecs Vec.! yFin) val
   where
     asVecs = matrix & V.toVector & fmap V.toVector
 
 indexed :: Fin x -> Fin y -> Lens' (Matrix x y a) a
-indexed xFin yFin = lens (index xFin yFin) $ flip (update xFin yFin)
-
-type instance Index (Matrix x y a) = (Fin x, Fin y)
-type instance IxValue (Matrix x y a) = a
-
-instance Ixed (Matrix x y a) where
-    type IxKind (Matrix x y a) = A_Lens
-    ix (xFin, yFin) = indexed xFin yFin
+indexed xFin yFin = lens (index xFin yFin) (flip $ update xFin yFin)
 
 xMin :: Matrix x y a -> Fin x
 xMin _ = UnsafeMkFin 0
