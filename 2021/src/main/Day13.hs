@@ -9,8 +9,9 @@ import Data.Foldable (asum, foldl')
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.IO qualified as Text.IO
 import Linear (V2(V2))
-import Optics (view)
+import Optics (view, (&))
 import System.Exit (die)
 import Text.Megaparsec qualified as Par
 import Text.Megaparsec.Char qualified as Par.Ch
@@ -97,10 +98,14 @@ applyFolds = flip $ foldl' reduce
 part1 :: (Ord a, Num a) => [V2 a] -> [Fold a] -> Int
 part1 points folds = length $ applyFolds (take 1 folds) points
 
+part2 :: (Ord a, Num a, Enum a) => [V2 a] -> [Fold a] -> Text
+part2 points folds = prettyGrid $ applyFolds folds points
+
 main :: IO ()
 main = do
     text <- readInputFileUtf8 "input/day-13.txt"
     case getInput @Int text of
         Left err -> die err
         Right (points, folds) -> do
-            print $ part1 points folds
+            part1 points folds & print
+            part2 points folds & Text.IO.putStrLn
