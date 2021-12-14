@@ -62,6 +62,7 @@ common common-lib-options
         , linear
         , megaparsec
         , mtl
+        , nonempty-containers
         , optics
         , parser-combinators
         , semigroupoids
@@ -94,6 +95,7 @@ library
         , Day11
         , Day12
         , Day13
+        , Day14
 
 library adventofcode2021-tests
     import: common-lib-options
@@ -117,6 +119,7 @@ library adventofcode2021-tests
         , Test11
         , Test12
         , Test13
+        , Test14
 
 
 executable day-01
@@ -182,6 +185,11 @@ executable day-12
 executable day-13
     import: common-exe-options
     mixins: adventofcode2021 (Day13 as Day)
+    main-is: Run.hs
+
+executable day-14
+    import: common-exe-options
+    mixins: adventofcode2021 (Day14 as Day)
     main-is: Run.hs
 
 
@@ -260,5 +268,11 @@ test-suite test-12
 test-suite test-13
     import: common-test-options
     mixins: adventofcode2021-tests (Test13 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-14
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test14 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
