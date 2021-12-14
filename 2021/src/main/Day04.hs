@@ -155,7 +155,7 @@ drawUntilAllWinners = drawUntil $ players .> null
 play :: State (Bingo a) b -> [a] -> [Matrix a] -> (b, Bingo a)
 play state calls boards = State.runState state $ MkBingo
     { toCall = calls
-    , players = fffmap (`MkNumber` NotDrawn) boards
+    , players = ffmap (`MkNumber` NotDrawn) <$> boards
     , winners = []
     }
 
