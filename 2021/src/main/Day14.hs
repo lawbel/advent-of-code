@@ -4,7 +4,7 @@
 
 module Day14 where
 
-import Control.Applicative.Combinators.NonEmpty qualified as Par.NE
+import Control.Applicative.Combinators.NonEmpty qualified as App.NE
 import Data.List qualified as List
 import Data.Map.NonEmpty (NEMap)
 import Data.Map.NonEmpty qualified as Map.NE
@@ -33,7 +33,7 @@ data Rule a = MkRule
 -- parsing
 
 parseTemplate :: Parser (NESeq Char)
-parseTemplate = Seq.NE.fromList <$> Par.NE.some Par.Ch.letterChar
+parseTemplate = Seq.NE.fromList <$> App.NE.some Par.Ch.letterChar
 
 parseRule :: Parser (Rule Char)
 parseRule = do

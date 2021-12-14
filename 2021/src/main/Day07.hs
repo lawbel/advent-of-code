@@ -1,6 +1,6 @@
 module Day07 where
 
-import Control.Applicative.Combinators.NonEmpty qualified as Par.NE
+import Control.Applicative.Combinators.NonEmpty qualified as App.NE
 import Data.Foldable (minimumBy)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Ord (comparing)
@@ -15,7 +15,7 @@ import Common
 
 
 parseCrabs :: Num a => Parser (NonEmpty a)
-parseCrabs = Par.Ch.Lex.decimal `Par.NE.sepBy1` Par.Ch.char ','
+parseCrabs = Par.Ch.Lex.decimal `App.NE.sepBy1` Par.Ch.char ','
 
 getCrabs :: Num a => Text -> Either String (NonEmpty a)
 getCrabs = runParser "day-07" $ parseCrabs <* Par.Ch.space <* Par.eof
