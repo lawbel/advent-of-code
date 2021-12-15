@@ -23,10 +23,14 @@ unitTests = Tasty.testGroup "unit tests" [aStarTests]
 
 aStarTests :: TestTree
 aStarTests = Tasty.testGroup "aStar"
-    [ HUnit.testCase "example" $
+    [ HUnit.testCase "small example" $
         let from = (xMin exampleGrid, yMin exampleGrid)
             to = (xMax exampleGrid, yMax exampleGrid)
         in  Day15.aStar from to exampleGrid @?= Day15.Finite 40
+    , HUnit.testCase "big example" $
+        let from = (xMin exampleQuintupled, yMin exampleQuintupled)
+            to = (xMax exampleQuintupled, yMax exampleQuintupled)
+        in  Day15.aStar from to exampleQuintupled @?= Day15.Finite 315
     ]
 
 exampleGrid :: Matrix 10 10 Int
@@ -45,3 +49,6 @@ exampleGrid =
             , [2, 3, 1, 1, 9, 4, 4, 5, 8, 1]
             ]
     )
+
+exampleQuintupled :: Matrix 50 50 Int
+exampleQuintupled = Day15.quintuple Day15.nextMod9 exampleGrid

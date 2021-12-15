@@ -3,11 +3,16 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoStarIsType #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
 
 module Day15 where
 
@@ -21,10 +26,12 @@ import Data.Kind (Type)
 import Data.Maybe (catMaybes)
 import Data.PQueue.Prio.Min (MinPQueue)
 import Data.PQueue.Prio.Min qualified as Queue
+import Data.Proxy (Proxy(Proxy))
 import Data.Text (Text)
 import Data.Vector qualified as Vec
 import Flow ((.>))
-import GHC.TypeNats (Nat)
+import GHC.TypeLits (KnownNat)
+import GHC.TypeNats (Nat, type (*))
 import Linear.V (V, Dim)
 import Linear.V qualified as V
 import Optics ((&), (%), (^?), (^.), ix, at, use)
@@ -33,6 +40,7 @@ import Optics.TH (makeFieldLabelsWith, noPrefixFieldLabels, makePrisms)
 import System.Exit (die)
 import Text.Megaparsec qualified as Par
 import Text.Megaparsec.Char qualified as Par.Ch
+import Unsafe.Coerce (unsafeCoerce)
 
 import Common
 import Common.Matrix
@@ -93,6 +101,29 @@ parseMatrix = do
 
 getMatrix :: Num a => Text -> Either String (SomeMatrix a)
 getMatrix = runParser "day-15" $ parseMatrix <* Par.Ch.space <* Par.eof
+
+-- combining matrices
+
+quintuple
+    :: Num a => (a -> a -> a) -> Matrix x y a -> Matrix (5 * x) (5 * y) a
+quintuple f = quintupleX f .> quintupleY f
+
+quintupleX :: Num a => (a -> a -> a) -> Matrix x y a -> Matrix (5 * x) y a
+quintupleX f mat =
+    appendX (f 0 <$> mat) $
+    appendX (f 1 <$> mat) $
+    appendX (f 2 <$> mat) $
+    appendX (f 3 <$> mat) (f 4 <$> mat)
+
+quintupleY :: Num a => (a -> a -> a) -> Matrix x y a -> Matrix x (5 * y) a
+quintupleY f mat =
+    appendY (f 0 <$> mat) $
+    appendY (f 1 <$> mat) $
+    appendY (f 2 <$> mat) $
+    appendY (f 3 <$> mat) (f 4 <$> mat)
+
+nextMod9 :: Integral a => a -> a -> a
+nextMod9 n val = 1 + mod (val + n - 1) 9
 
 -- logic
 
@@ -164,10 +195,23 @@ manhattan (xFrom, yFrom) (xTo, yTo) = Finite $ fromIntegral $ sum
 -- main
 
 part1 :: (Dim x, Dim y, Num a, Ord a) => Matrix x y a -> Maybe a
-part1 matrix = aStar from to  matrix ^? _Finite
+part1 matrix = aStar from to matrix ^? _Finite
   where
     from = (xMin matrix, yMin matrix)
     to = (xMax matrix, yMax matrix)
+
+-- as @ghc-typelits-knownnat@ doesn't know about 'Dim', we do the conversion
+-- between 'Dim' and 'KnownNat' ourselves
+part2 :: forall x y a. (Dim x, Dim y, Integral a) => Matrix x y a -> Maybe a
+part2 matrix =
+    V.reifyDimNat (V.reflectDim $ Proxy @x) $ \(_ :: Proxy x') ->
+    V.reifyDimNat (V.reflectDim $ Proxy @y) $ \(_ :: Proxy y') ->
+        part2' (unsafeCoerce matrix :: Matrix x' y' a)
+
+-- here @ghc-typelits-knownnat@ is solving @KnownNat n => KnownNat (n * 5)@
+-- for @n = x, y@ which is exactly what we need to use 'quintuple'
+part2' :: (KnownNat x, KnownNat y, Integral a) => Matrix x y a -> Maybe a
+part2' = quintuple nextMod9 .> part1
 
 main :: IO ()
 main = do
@@ -175,4 +219,5 @@ main = do
     case getMatrix @Int text of
         Left err -> die err
         Right (MkSomeMatrix matrix) -> do
-            part1 matrix & maybe "???" show & putStrLn
+            part1 matrix & maybe "infinity" show & putStrLn
+            part2 matrix & maybe "infinity" show & putStrLn

@@ -9,14 +9,15 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Common.Matrix
     ( Matrix(MkMatrix, unMatrix)
-    , fromVectors
-    , liftMatrix
+    , fromVectors, liftMatrix
+    , appendX, appendY
 
     , Fin(unFin)
     , next, prev
@@ -34,7 +35,7 @@ import Data.Proxy (Proxy(Proxy))
 import Data.Vector (Vector)
 import Data.Vector qualified as Vec
 import Flow ((.>))
-import GHC.TypeNats (Nat)
+import GHC.TypeNats (Nat, type (+))
 import Instances.TH.Lift ()  -- provides @instance Lift Vector@
 import Language.Haskell.TH.Syntax (Lift, Q, TExp, liftTyped)
 import Linear.V (V, Dim)
@@ -88,6 +89,19 @@ liftMatrix =
         .> fromVectors
         .> fromJust
         .> liftTyped
+
+{-# ANN appendX "HLINT: ignore" #-}
+appendX :: Matrix l y a -> Matrix r y a -> Matrix (l + r) y a
+appendX (MkMatrix left) (MkMatrix right) =
+    MkMatrix $ V.V $ fmap V.V $
+        Vec.zipWith (<>) (toVec left) (toVec right)
+  where
+    toVec = V.toVector .> fmap V.toVector
+
+appendY :: Matrix x l a -> Matrix x r a -> Matrix x (l + r) a
+appendY (MkMatrix left) (MkMatrix right) =
+    MkMatrix $ V.V $
+        V.toVector left <> V.toVector right
 
 next :: Dim n => Fin n -> Maybe (Fin n)
 next fin@(UnsafeMkFin num)

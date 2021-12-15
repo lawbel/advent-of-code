@@ -58,6 +58,8 @@ common common-lib-options
         , bytestring
         , containers
         , flow
+        , ghc-typelits-knownnat
+        , ghc-typelits-natnormalise
         , hashable
         , interpolatedstring-perl6
         , linear
