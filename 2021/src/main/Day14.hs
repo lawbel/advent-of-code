@@ -79,12 +79,6 @@ applyRulesN n rules = compose n $ applyRules rules
 count :: (Foldable f, Ord a) => f a -> Map a Int
 count = Fold.toList .> fmap (, 1) .> Map.fromListWith (+)
 
-mostCommon :: Ord a => Seq a -> Maybe Int
-mostCommon = count .> mostCommonIn
-
-leastCommon :: Ord a => Seq a -> Maybe Int
-leastCommon = count .> leastCommonIn
-
 -- using counters
 
 asCount :: Ord a => Seq a -> Map (a, a) Int
@@ -144,9 +138,9 @@ leastCommonIn = Map.elems
 -- main hook
 
 part1 :: Ord a => Seq a -> [Rule a] -> Maybe Int
-part1 template rules = (-) <$> mostCommon poly <*> leastCommon poly
+part1 template rules = (-) <$> mostCommonIn poly <*> leastCommonIn poly
   where
-    poly = applyRulesN 10 rules template
+    poly = count $ applyRulesN 10 rules template
 
 part2 :: Ord a => Seq a -> [Rule a] -> Maybe Int
 part2 template rules = (-) <$> mostCommonIn poly <*> leastCommonIn poly
