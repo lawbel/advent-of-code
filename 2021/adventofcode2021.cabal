@@ -58,6 +58,7 @@ common common-lib-options
         , bytestring
         , containers
         , flow
+        , hashable
         , interpolatedstring-perl6
         , linear
         , megaparsec
@@ -65,10 +66,12 @@ common common-lib-options
         , nonempty-containers
         , optics
         , parser-combinators
+        , pqueue
         , semigroupoids
         , template-haskell
         , text
         , th-lift-instances
+        , unordered-containers
         , vector
         , vector-algorithms
 

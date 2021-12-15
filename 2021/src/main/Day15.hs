@@ -15,14 +15,12 @@ import Control.Applicative (some)
 import Control.Monad.State (State, evalState, when)
 import Data.Char qualified as Char
 import Data.Foldable (for_)
+import Data.HashMap.Lazy (HashMap)
+import Data.HashMap.Lazy qualified as HMap
 import Data.Kind (Type)
-import Data.List.NonEmpty qualified as List.NE
-import Data.Map (Map)
-import Data.Map qualified as Map
 import Data.Maybe (catMaybes)
-import Data.Ord (comparing)
-import Data.Set (Set)
-import Data.Set qualified as Set
+import Data.PQueue.Prio.Min (MinPQueue)
+import Data.PQueue.Prio.Min qualified as Queue
 import Data.Text (Text)
 import Data.Vector qualified as Vec
 import Flow ((.>))
@@ -30,7 +28,7 @@ import GHC.TypeNats (Nat)
 import Linear.V (V, Dim)
 import Linear.V qualified as V
 import Optics ((&), (%), (^?), (^.), ix, at, use)
-import Optics.State.Operators ((%=), (?=))
+import Optics.State.Operators ((%=), (?=), (.=))
 import Optics.TH (makeFieldLabelsWith, noPrefixFieldLabels, makePrisms)
 import System.Exit (die)
 import Text.Megaparsec qualified as Par
@@ -68,9 +66,9 @@ data Distance a
 makePrisms ''Distance
 
 data AStar x y a = MkAStar
-    { open :: Set (Fin x, Fin y)
-    , cheap :: Map (Fin x, Fin y) (Distance a)
-    , guess :: Map (Fin x, Fin y) (Distance a)
+    { open :: MinPQueue (Distance a) (Fin x, Fin y)
+    , cheap :: HashMap (Fin x, Fin y) (Distance a)
+    , guess :: HashMap (Fin x, Fin y) (Distance a)
     } deriving (Eq, Ord, Show)
 
 makeFieldLabelsWith noPrefixFieldLabels ''AStar
@@ -107,9 +105,9 @@ aStar
     :: (Dim x, Dim y, Num a, Ord a)
     => (Fin x, Fin y) -> (Fin x, Fin y) -> Matrix x y a -> Distance a
 aStar from to matrix = evalState (runAStar matrix to) $ MkAStar
-    { open = Set.singleton from
-    , cheap = Map.singleton from $ Finite 0
-    , guess = Map.singleton from $ manhattan to from
+    { open = Queue.singleton (Finite 0) from
+    , cheap = HMap.singleton from $ Finite 0
+    , guess = HMap.singleton from $ manhattan to from
     }
 
 runAStar
@@ -117,24 +115,25 @@ runAStar
     => Matrix x y a -> (Fin x, Fin y) -> State (AStar x y a) (Distance a)
 runAStar matrix to = getNext >>= \case
     Nothing -> pure Infinite
-    Just cur | cur == to -> Map.findWithDefault Infinite cur <$> use #guess
-    Just cur -> do
-        #open %= Set.delete cur
+    Just (cur, dist) | cur == to -> pure dist
+    Just (cur, _) -> do
         for_ (uncurry neighbours cur) $ \nbr -> do
             new <- tentative matrix cur nbr
-            best <- Map.findWithDefault Infinite nbr <$> use #cheap
+            best <- HMap.findWithDefault Infinite nbr <$> use #cheap
             when (new < best) $ do
                 #cheap % at nbr ?= new
-                #guess % at nbr ?= add new (manhattan to nbr)
-                #open %= Set.insert nbr
+                let guessed = add new (manhattan to nbr)
+                #guess % at nbr ?= guessed
+                #open %= Queue.insert guessed nbr
         runAStar matrix to
 
-getNext :: Ord a => State (AStar x y a) (Maybe (Fin x, Fin y))
-getNext = do
-    dist <- flip (Map.findWithDefault Infinite) <$> use #guess
-    opens <- use #open
-    let dists = List.NE.nonEmpty $ Map.toList $ Map.fromSet dist opens
-    pure $ fmap (infimumBy1 (comparing snd) .> fst) dists
+{-# ANN getNext "HLINT: ignore" #-}
+getNext :: Ord a => State (AStar x y a) (Maybe ((Fin x, Fin y), Distance a))
+getNext = fmap Queue.minViewWithKey (use #open) >>= \case
+    Nothing -> pure Nothing
+    Just ((dist, point), updated) -> do
+        #open .= updated
+        pure $ Just (point, dist)
 
 tentative
     :: Num a
@@ -143,7 +142,7 @@ tentative
     -> (Fin x, Fin y)
     -> State (AStar x y a) (Distance a)
 tentative matrix cur nbr = do
-    dist <- Map.findWithDefault Infinite cur <$> use #cheap
+    dist <- HMap.findWithDefault Infinite cur <$> use #cheap
     pure $ add dist $ Finite $ matrix ^. ix nbr
 
 {-# ANN neighbours "HLINT: ignore" #-}

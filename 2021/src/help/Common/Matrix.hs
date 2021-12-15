@@ -2,6 +2,8 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -25,6 +27,7 @@ module Common.Matrix
     ) where
 
 import Data.Function ((&))
+import Data.Hashable (Hashable)
 import Data.Kind (Type)
 import Data.Maybe (fromJust)
 import Data.Proxy (Proxy(Proxy))
@@ -70,7 +73,8 @@ instance Ixed (Matrix x y a) where
 type Fin :: Nat -> Type
 newtype Fin n = UnsafeMkFin
     { unFin :: Int
-    } deriving (Eq, Ord, Show)
+    } deriving stock (Eq, Ord, Show)
+      deriving newtype Hashable
 
 fromVectors :: (Dim x, Dim y) => Vector (Vector a) -> Maybe (Matrix x y a)
 fromVectors outer = do
