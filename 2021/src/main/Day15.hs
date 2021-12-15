@@ -7,29 +7,30 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Day15 where
 
 import Control.Applicative (some)
-import Control.Monad.State (State, execState, when)
+import Control.Monad.State (State, evalState, when)
 import Data.Char qualified as Char
 import Data.Foldable (for_)
 import Data.Kind (Type)
+import Data.List.NonEmpty qualified as List.NE
+import Data.Map (Map)
+import Data.Map qualified as Map
 import Data.Maybe (catMaybes)
 import Data.Ord (comparing)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
-import Data.Traversable (for)
 import Data.Vector qualified as Vec
 import Flow ((.>))
 import GHC.TypeNats (Nat)
 import Linear.V (V, Dim)
 import Linear.V qualified as V
-import Optics ((&), (%), (.~), (^.), (^?), ix, at, use, view, _1, _2)
-import Optics.State.Operators ((%=), (.=))
+import Optics ((&), (%), (^?), (^.), ix, at, use)
+import Optics.State.Operators ((%=), (?=))
 import Optics.TH (makeFieldLabelsWith, noPrefixFieldLabels, makePrisms)
 import System.Exit (die)
 import Text.Megaparsec qualified as Par
@@ -66,13 +67,13 @@ data Distance a
 
 makePrisms ''Distance
 
-data Dijkstra x y a = MkDijkstra
-    { nodes :: Matrix x y (a, Distance a)
-    , unvisited :: Set (Fin x, Fin y)
-    , current :: (Fin x, Fin y)
+data AStar x y a = MkAStar
+    { open :: Set (Fin x, Fin y)
+    , cheap :: Map (Fin x, Fin y) (Distance a)
+    , guess :: Map (Fin x, Fin y) (Distance a)
     } deriving (Eq, Ord, Show)
 
-makeFieldLabelsWith noPrefixFieldLabels ''Dijkstra
+makeFieldLabelsWith noPrefixFieldLabels ''AStar
 
 -- parsing
 
@@ -102,49 +103,48 @@ add dist1 dist2 = case (dist1, dist2) of
     (Finite x, Finite y) -> Finite $ x + y
     _                    -> Infinite
 
-dijkstra
+aStar
     :: (Dim x, Dim y, Num a, Ord a)
-    => Fin x -> Fin y -> Matrix x y a -> Matrix x y (a, Distance a)
-dijkstra x y matrix = view #nodes $ execState runDijkstra $ MkDijkstra
-    { nodes = matrix
-        & fmap (, Infinite)
-        & ix (x, y) % _2 .~ Finite 0
-    , unvisited = Set.fromList $
-        (,) <$> xIndices matrix <*> yIndices matrix
-    , current = (x, y)
+    => (Fin x, Fin y) -> (Fin x, Fin y) -> Matrix x y a -> Distance a
+aStar from to matrix = evalState (runAStar matrix to) $ MkAStar
+    { open = Set.singleton from
+    , cheap = Map.singleton from $ Finite 0
+    , guess = Map.singleton from $ manhattan to from
     }
 
-runDijkstra
-    :: forall x y a
-    .  (Dim x, Dim y, Num a, Ord a)
-    => State (Dijkstra x y a) ()
-runDijkstra = do
-    cur <- use #current
-    unvis <- flip Set.member <$> use #unvisited
-    let nbrs = uncurry neighbours cur
-    for_ (filter unvis nbrs) $ \nbr -> do
-        dist <- distThrough cur nbr
-        #nodes % ix nbr % _2 %= min dist
-    #unvisited % at cur .= Nothing
-    remaining <- Set.toList <$> use #unvisited
-    let getMin = infimumBy (comparing fst) (Infinite, cur)
-    (dist, new) <- fmap getMin $ for remaining $ \r -> do
-        matrix <- use #nodes
-        pure (matrix ^. ix r % _2, r)
-    when (dist < Infinite) $ do
-        #current .= new
-        runDijkstra
+runAStar
+    :: (Dim x, Dim y, Num a, Ord a)
+    => Matrix x y a -> (Fin x, Fin y) -> State (AStar x y a) (Distance a)
+runAStar matrix to = getNext >>= \case
+    Nothing -> pure Infinite
+    Just cur | cur == to -> Map.findWithDefault Infinite cur <$> use #guess
+    Just cur -> do
+        #open %= Set.delete cur
+        for_ (uncurry neighbours cur) $ \nbr -> do
+            new <- tentative matrix cur nbr
+            best <- Map.findWithDefault Infinite nbr <$> use #cheap
+            when (new < best) $ do
+                #cheap % at nbr ?= new
+                #guess % at nbr ?= add new (manhattan to nbr)
+                #open %= Set.insert nbr
+        runAStar matrix to
 
-distThrough
+getNext :: Ord a => State (AStar x y a) (Maybe (Fin x, Fin y))
+getNext = do
+    dist <- flip (Map.findWithDefault Infinite) <$> use #guess
+    opens <- use #open
+    let dists = List.NE.nonEmpty $ Map.toList $ Map.fromSet dist opens
+    pure $ fmap (infimumBy1 (comparing snd) .> fst) dists
+
+tentative
     :: Num a
-    => (Fin x, Fin y)
+    => Matrix x y a
     -> (Fin x, Fin y)
-    -> State (Dijkstra x y a) (Distance a)
-distThrough from to = do
-    matrix <- use #nodes
-    let distFrom = matrix ^. ix from % _2
-    let distTo = Finite $ matrix ^. ix to % _1
-    pure $ add distFrom distTo
+    -> (Fin x, Fin y)
+    -> State (AStar x y a) (Distance a)
+tentative matrix cur nbr = do
+    dist <- Map.findWithDefault Infinite cur <$> use #cheap
+    pure $ add dist $ Finite $ matrix ^. ix nbr
 
 {-# ANN neighbours "HLINT: ignore" #-}
 neighbours :: (Dim x, Dim y) => Fin x -> Fin y -> [(Fin x, Fin y)]
@@ -156,12 +156,19 @@ neighbours x y = concat
     nbrs :: Dim n => Fin n -> [Fin n]
     nbrs fin = catMaybes [prev fin, next fin]
 
-part1 :: (Dim x, Dim y, Num a, Ord a) => Matrix x y a -> Maybe a
-part1 matrix =
-    dijkstra (xMin matrix) (yMin matrix) matrix
-        ^? ix (xMax matrix, yMax matrix) % _2 % _Finite
+manhattan :: Num a => (Fin x, Fin y) -> (Fin x, Fin y) -> Distance a
+manhattan (xFrom, yFrom) (xTo, yTo) = Finite $ fromIntegral $ sum
+    [ abs $ unFin xFrom - unFin xTo
+    , abs $ unFin yFrom - unFin yTo
+    ]
 
 -- main
+
+part1 :: (Dim x, Dim y, Num a, Ord a) => Matrix x y a -> Maybe a
+part1 matrix = aStar from to  matrix ^? _Finite
+  where
+    from = (xMin matrix, yMin matrix)
+    to = (xMax matrix, yMax matrix)
 
 main :: IO ()
 main = do
