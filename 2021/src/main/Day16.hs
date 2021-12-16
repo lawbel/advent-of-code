@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Day16 where
@@ -9,8 +10,9 @@ import Control.Monad (replicateM)
 import Control.Monad.Combinators.NonEmpty qualified as Monad.NE
 import Data.Bifunctor (first)
 import Data.Foldable (asum)
+import Data.Function ((&))
 import Data.Functor (($>))
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty (NonEmpty((:|)))
 import Data.List.NonEmpty qualified as List.NE
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -18,6 +20,7 @@ import Data.Void (Void)
 import Flow ((.>))
 import Language.Haskell.TH.Syntax (Lift)
 import System.Exit (die)
+import Text.InterpolatedString.Perl6 (qq)
 import Text.Megaparsec (Parsec)
 import Text.Megaparsec qualified as Par
 import Text.Megaparsec.Char qualified as Par.Ch
@@ -128,7 +131,7 @@ getPacket :: Text -> Either String (Packet [Bit])
 getPacket text = do
     bits <- first Par.errorBundlePretty $
         Par.parse (parseHexChars <* Par.Ch.space <* Par.eof) "day-16" text
-    maybeToEither "couldn't parse packet from bits" $
+    maybeToEither [qq|couldn't parse packet from $bits|] $
         Par.parseMaybe (parsePacket' <* Par.eof) bits
   where
     parsePacket' = parsePacket <* Par.many (Par.single B0)
@@ -166,6 +169,30 @@ sumOfVersions = \case
 part1 :: Packet [Bit] -> Int
 part1 = fmap bitsToInt .> sumOfVersions
 
+packetValue :: (Num a, Ord a, Show a) => Packet a -> Either String a
+packetValue = \case
+    PacketL lit -> Right $ litValue lit
+    PacketO op  -> operatorValue op
+
+operatorValue :: (Num a, Ord a, Show a) => Operator a -> Either String a
+operatorValue operator = do
+    vals <- traverse packetValue $ opPackets operator
+    let pairValue n cmp = case vals of
+            x :| [y] -> Right $ if x `cmp` y then 1 else 0
+            _ -> Left [qq|bad # packets ({length vals}) for type ID $n|]
+    case opTypeID operator of
+        0   -> Right $ sum vals
+        1   -> Right $ product vals
+        2   -> Right $ infimum1 vals
+        3   -> Right $ supremum1 vals
+        n@5 -> pairValue n (>)
+        n@6 -> pairValue n (<)
+        n@7 -> pairValue n (==)
+        n   -> Left [qq|bad type ID ($n) for operator|]
+
+part2 :: Packet [Bit] -> Either String Int
+part2 = fmap bitsToInt .> packetValue
+
 -- main hook
 
 main :: IO ()
@@ -174,4 +201,5 @@ main = do
     case getPacket text of
         Left err -> die err
         Right packet -> do
-            print $ part1 packet
+            part1 packet & print
+            part2 packet & either id show & putStrLn
