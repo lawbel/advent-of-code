@@ -69,6 +69,7 @@ common common-lib-options
         , optics
         , parser-combinators
         , pqueue
+        , pretty-simple
         , semigroupoids
         , template-haskell
         , text
@@ -102,6 +103,7 @@ library
         , Day13
         , Day14
         , Day15
+        , Day16
 
 library adventofcode2021-tests
     import: common-lib-options
@@ -127,6 +129,7 @@ library adventofcode2021-tests
         , Test13
         , Test14
         , Test15
+        , Test16
 
 
 executable day-01
@@ -202,6 +205,11 @@ executable day-14
 executable day-15
     import: common-exe-options
     mixins: adventofcode2021 (Day15 as Day)
+    main-is: Run.hs
+
+executable day-16
+    import: common-exe-options
+    mixins: adventofcode2021 (Day16 as Day)
     main-is: Run.hs
 
 
@@ -292,5 +300,11 @@ test-suite test-14
 test-suite test-15
     import: common-test-options
     mixins: adventofcode2021-tests (Test15 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-16
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test16 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0

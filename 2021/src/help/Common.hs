@@ -45,6 +45,11 @@ textShow = show .> Text.pack
 cons :: a -> [a] -> [a]
 cons x xs = x : xs
 
+maybeToEither :: a -> Maybe b -> Either a b
+maybeToEither l = \case
+    Nothing -> Left l
+    Just r  -> Right r
+
 
 (+~) :: (Is k A_Setter, Num a) => Optic k is s t a a -> a -> s -> t
 optic +~ x = optic %~ (+ x)
