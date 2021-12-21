@@ -10,7 +10,7 @@ module Day21 where
 
 import Control.Monad.State (State, replicateM, gets, when, runState)
 import Flow ((.>))
-import Optics (Lens', (%), (^.), zoom, equality, use, view)
+import Optics (Lens', (%), (^.), zoom, equality, use)
 import Optics.State.Operators ((<%=), (%=))
 import Optics.TH (makeFieldLabelsWith, noPrefixFieldLabels)
 
