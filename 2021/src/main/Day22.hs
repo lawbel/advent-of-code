@@ -1,5 +1,13 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Day22 where
 
@@ -9,7 +17,8 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Flow ((.>))
 import Linear (V3(V3))
-import Optics ((%~), (^.), _2, _3, view)
+import Optics ((%~), (^.), (%), _2, view)
+import Optics.TH (makeFieldLabelsWith, noPrefixFieldLabels)
 import System.Exit (die)
 import Text.Megaparsec qualified as Par
 import Text.Megaparsec.Char qualified as Par.Ch
@@ -22,6 +31,13 @@ import Common
 
 data Setting = On | Off
     deriving (Bounded, Enum, Eq, Ord, Read, Show)
+
+data Cuboid a = MkCuboid
+    { lower :: V3 a
+    , upper :: V3 a }
+    deriving (Eq, Ord, Read, Show)
+
+makeFieldLabelsWith noPrefixFieldLabels ''Cuboid
 
 -- parsing
 
@@ -41,7 +57,7 @@ parseAxis chr = do
   where
     value = Par.Ch.Lex.signed Par.Ch.hspace Par.Ch.Lex.decimal
 
-parseCuboid :: Num a => Parser (Setting, V3 a, V3 a)
+parseCuboid :: Num a => Parser (Setting, Cuboid a)
 parseCuboid = do
     setting <- parseSetting
     (xInf, xSup) <- parseAxis 'x'
@@ -49,65 +65,63 @@ parseCuboid = do
     (yInf, ySup) <- parseAxis 'y'
     Par.Ch.char' ',' *> Par.Ch.hspace
     (zInf, zSup) <- parseAxis 'z'
-    pure (setting, V3 xInf yInf zInf, V3 xSup ySup zSup)
+    let lower = V3 xInf yInf zInf
+    let upper = V3 xSup ySup zSup
+    pure (setting, MkCuboid{..})
 
-parseCuboids :: Num a => Parser [(Setting, V3 a, V3 a)]
+parseCuboids :: Num a => Parser [(Setting, Cuboid a)]
 parseCuboids = parseCuboid `Par.sepEndBy` Par.Ch.space
 
-getCuboids :: Num a => Text -> Either String [(Setting, V3 a, V3 a)]
+getCuboids :: Num a => Text -> Either String [(Setting, Cuboid a)]
 getCuboids = runParser "day-22" $ parseCuboids <* Par.eof
 
 -- auxilliary functions
 
 overlaps :: Ord a => (a, a) -> (a, a) -> Bool
-overlaps (inf1, sup1) (inf2, sup2) =
-    not $ (inf1 > sup2) || (inf2 > sup1)
+overlaps (inf1, sup1) (inf2, sup2) = not $ (inf1 > sup2) || (inf2 > sup1)
 
-overlapsV3 :: Ord a => (V3 a, V3 a) -> (V3 a, V3 a) -> Bool
-overlapsV3 (inf1, sup1) (inf2, sup2) =
-    overlapsOn _x && overlapsOn _y && overlapsOn _z
+overlaps' :: Ord a => Cuboid a -> Cuboid a -> Bool
+overlaps' cub1 cub2 = overlapsOn _x && overlapsOn _y && overlapsOn _z
   where
-    overlapsOn ax = overlaps (inf1 ^. ax, sup1 ^. ax) (inf2 ^. ax, sup2 ^. ax)
+    bounds val ax = (val ^. #lower % ax, val ^. #upper % ax)
+    overlapsOn ax = bounds cub1 ax `overlaps` bounds cub2 ax
 
 clamp :: Ord a => a -> a -> a -> a
 clamp inf sup = max inf .> min sup
 
-clampV3 :: Ord a => V3 a -> V3 a -> V3 a -> V3 a
-clampV3 inf sup = clampOn _x .> clampOn _y .> clampOn _z
+clamp' :: Ord a => Cuboid a -> V3 a -> V3 a
+clamp' MkCuboid{..} = clampOn _x .> clampOn _y .> clampOn _z
   where
-    clampOn ax = ax %~ clamp (inf ^. ax) (sup ^. ax)
+    clampOn ax = ax %~ clamp (lower ^. ax) (upper ^. ax)
 
 -- core logic
 
-apply :: (Ord a, Enum a) => Setting -> V3 a -> V3 a -> Set (V3 a) -> Set (V3 a)
-apply setting inf sup = case setting of
+apply :: (Ord a, Enum a) => Setting -> Cuboid a -> Set (V3 a) -> Set (V3 a)
+apply setting MkCuboid{..} = case setting of
     On  -> Set.union points
     Off -> flip Set.difference points
   where
     points = Set.fromList $ V3
-        <$> [view _x inf .. view _x sup]
-        <*> [view _y inf .. view _y sup]
-        <*> [view _z inf .. view _z sup]
+        <$> [view _x lower .. view _x upper]
+        <*> [view _y lower .. view _y upper]
+        <*> [view _z lower .. view _z upper]
 
-applyAll :: (Ord a, Enum a) => [(Setting, V3 a, V3 a)] -> Set (V3 a)
-applyAll = foldl' go Set.empty
-  where
-    go = flip $ \(setting, inf, sup) -> apply setting inf sup
+applyAll :: (Ord a, Enum a) => [(Setting, Cuboid a)] -> Set (V3 a)
+applyAll = foldl' (flip $ uncurry apply) Set.empty
 
 wrapWithin
-    :: (Ord a, Num a)
-    => a -> [(Setting, V3 a, V3 a)] -> [(Setting, V3 a, V3 a)]
-wrapWithin size = filter inBounds
-    .> fmap (_2 %~ clampV3 inf sup)
-    .> fmap (_3 %~ clampV3 inf sup)
+    :: (Ord a, Num a) => a -> [(Setting, Cuboid a)] -> [(Setting, Cuboid a)]
+wrapWithin size = filter (snd .> overlaps' cuboid)
+    .> fmap (_2 % #lower %~ clamp' cuboid)
+    .> fmap (_2 % #upper %~ clamp' cuboid)
   where
-    inBounds (_, u, v) = overlapsV3 (u, v) (inf, sup)
-    inf = pure (-size)
-    sup = pure size
+    cuboid = MkCuboid
+        { lower = pure (-size)
+        , upper = pure size }
 
 -- parts & main
 
-part1 :: (Num a, Ord a, Enum a) => [(Setting, V3 a, V3 a)] -> Int
+part1 :: (Num a, Ord a, Enum a) => [(Setting, Cuboid a)] -> Int
 part1 = wrapWithin 50 .> applyAll .> Set.size
 
 main :: IO ()
