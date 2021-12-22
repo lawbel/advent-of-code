@@ -106,6 +106,7 @@ library
         , Day16
         , Day17
         , Day21
+        , Day22
 
 library adventofcode2021-tests
     import: common-lib-options
@@ -134,6 +135,7 @@ library adventofcode2021-tests
         , Test16
         , Test17
         , Test21
+        , Test22
 
 
 executable day-01
@@ -224,6 +226,11 @@ executable day-17
 executable day-21
     import: common-exe-options
     mixins: adventofcode2021 (Day21 as Day)
+    main-is: Run.hs
+
+executable day-22
+    import: common-exe-options
+    mixins: adventofcode2021 (Day22 as Day)
     main-is: Run.hs
 
 
@@ -332,5 +339,11 @@ test-suite test-17
 test-suite test-21
     import: common-test-options
     mixins: adventofcode2021-tests (Test21 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-22
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test22 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0

@@ -15,7 +15,7 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text.Enc
 import Data.Void (Void)
 import Flow ((.>), (<.))
-import Linear (R1, R2)
+import Linear (R1, R2, R3)
 import Linear qualified
 import Optics
     ( A_Setter, A_Getter, An_AffineFold, Is, Optic, Optic', Lens', (%~) )
@@ -75,6 +75,9 @@ _x = Optics.lensVL Linear._x
 
 _y :: R2 f => Lens' (f a) a
 _y = Optics.lensVL Linear._y
+
+_z :: R3 f => Lens' (f a) a
+_z = Optics.lensVL Linear._z
 
 seek :: (Is k A_Getter, MonadReader s m) => Optic' k is s a -> m a
 seek optic = asks (Optics.view optic)
