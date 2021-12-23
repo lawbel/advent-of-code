@@ -11,7 +11,7 @@ module Day17 where
 import Control.Monad (guard)
 import Data.Set qualified as Set
 import Flow ((.>))
-import Linear (V2(V2))
+import Linear (V2)
 import Optics ((&), (%), (%~))
 import Optics.TH (noPrefixFieldLabels, makeFieldLabelsWith)
 
