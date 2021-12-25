@@ -20,6 +20,7 @@ import Text.Megaparsec qualified as Par
 import Text.Megaparsec.Char qualified as Par.Ch
 
 import Common hiding (Parser)
+import Common.Optics
 
 
 -- types

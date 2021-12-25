@@ -30,6 +30,8 @@ import Text.Megaparsec.Char qualified as Par.Ch
 
 import Common
 import Common.Matrix
+import Common.Optics
+import Common.State.Trans
 
 
 -- types

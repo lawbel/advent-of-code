@@ -68,6 +68,8 @@ common common-lib-options
         , nonempty-containers
         , optics
         , parser-combinators
+        , polysemy
+        , polysemy-plugin
         , pqueue
         , pretty-simple
         , semigroupoids
@@ -88,6 +90,9 @@ library
     exposed-modules:
         , Common
         , Common.Matrix
+        , Common.Optics
+        , Common.State.Poly
+        , Common.State.Trans
         , Day01
         , Day02
         , Day03

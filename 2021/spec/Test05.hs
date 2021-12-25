@@ -18,7 +18,7 @@ import Test.Tasty.QuickCheck (Arbitrary, (===))
 import Test.Tasty.QuickCheck qualified as Check
 
 import Day05 qualified
-import Common
+import Common.Optics
 
 
 instance Arbitrary a => Arbitrary (V2 a) where

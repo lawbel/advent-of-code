@@ -14,7 +14,7 @@ import Optics (Lens', (%), (^.), zoom, equality, use)
 import Optics.State.Operators ((<%=), (%=))
 import Optics.TH (makeFieldLabelsWith, noPrefixFieldLabels)
 
-import Common
+import Common.State.Trans
 
 
 -- types

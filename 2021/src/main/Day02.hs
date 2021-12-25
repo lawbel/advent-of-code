@@ -21,6 +21,8 @@ import Text.Megaparsec.Char qualified as Par.Ch
 import Text.Megaparsec.Char.Lexer qualified as Par.Ch.Lex
 
 import Common
+import Common.Optics
+import Common.State.Trans
 
 
 data Position a = MkPosition

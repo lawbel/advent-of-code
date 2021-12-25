@@ -16,6 +16,7 @@ import Optics ((&), (%), (%~))
 import Optics.TH (noPrefixFieldLabels, makeFieldLabelsWith)
 
 import Common
+import Common.Optics
 
 
 data Probe a = MkProbe
