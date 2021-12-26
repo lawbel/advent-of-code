@@ -13,7 +13,6 @@ import Day24 (Instr, Register)
 import Day24 qualified
 
 
-
 main :: IO ()
 main = Tasty.defaultMain tests
 
