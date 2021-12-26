@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Common where
 
@@ -6,6 +7,8 @@ import Control.Monad ((>=>))
 import Data.Bifunctor (first)
 import Data.ByteString qualified as Byt
 import Data.List.NonEmpty (NonEmpty((:|)))
+import Data.Map (Map)
+import Data.Map　qualified as Map
 import Data.Semigroup.Foldable (Foldable1)
 import Data.Semigroup.Foldable qualified as Fold1
 import Data.Text (Text)
@@ -13,6 +16,7 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text.Enc
 import Data.Void (Void)
 import Flow ((.>))
+import Linear.V2 (V2(V2))
 import Text.Megaparsec (Parsec)
 import Text.Megaparsec qualified as Par
 
@@ -32,6 +36,23 @@ readInputFileUtf8 = getDataFileName >=> readFileUtf8
 
 textShow :: Show a => a -> Text
 textShow = show .> Text.pack
+
+prettyGrid
+    :: (Enum a, Ord a)
+    => V2 a -> V2 a -> (Maybe b -> Text) -> Map (V2 a) b -> Text
+prettyGrid (V2 xMin yMin) (V2 xMax yMax) pretty grid
+    | null grid  = ""
+    | otherwise = Text.intercalate "\n" $ do
+        y <- [yMin .. yMax]
+        pure $ join $ do
+            x <- [xMin .. xMax]
+            pure $ Text.justifyLeft width ' ' $ pretty $
+                Map.lookup (V2 x y) grid
+  where
+    join = if width > 1 then Text.unwords else mconcat
+    width = maximum $
+        Text.length (pretty Nothing)
+            : fmap (Just .> pretty .> Text.length) (Map.elems grid)
 
 cons :: a -> [a] -> [a]
 cons x xs = x : xs
