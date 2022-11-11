@@ -41,6 +41,9 @@ common common-lib-options
         , text ^>=2.0
         , vector ^>=0.13
         , filepath ^>=1.4.100
+        , linear ^>=1.21.10
+        , lens ^>=5.2
+        , interpolatedstring-perl6 ^>=1.0.2
 
 common common-runtime-options
     import:
@@ -62,6 +65,7 @@ library
         , Common.Vector
         , Day01
         , Day02
+        , Day03
 
 library adventofcode2017-tests
     import: common-lib-options
@@ -73,6 +77,7 @@ library adventofcode2017-tests
     exposed-modules:
         , Test01
         , Test02
+        , Test03
 
 
 common common-exe-options
@@ -89,6 +94,11 @@ executable day-02
     mixins: adventofcode2017 (Day02 as Day)
     main-is: Run.hs
 
+executable day-03
+    import: common-exe-options
+    mixins: adventofcode2017 (Day03 as Day)
+    main-is: Run.hs
+
 
 common common-test-options
     import: common-runtime-options
@@ -103,5 +113,11 @@ test-suite test-01
 test-suite test-02
     import: common-test-options
     mixins: adventofcode2017-tests (Test02 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-03
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test03 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
