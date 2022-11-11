@@ -17,7 +17,7 @@ tests :: TestTree
 tests = Tasty.testGroup "tests" [unitTests]
 
 unitTests :: TestTree
-unitTests = Tasty.testGroup "unit tests" [part1Tests]
+unitTests = Tasty.testGroup "unit tests" [part1Tests, part2Tests]
 
 part1Tests :: TestTree
 part1Tests = Tasty.testGroup "part 1 tests"
@@ -34,3 +34,19 @@ part1Tests = Tasty.testGroup "part 1 tests"
         [ Vec.fromList [ 5, 1, 9, 5 ]
         , Vec.fromList [ 7, 5, 3    ]
         , Vec.fromList [ 2, 4, 6, 8 ] ]
+
+part2Tests :: TestTree
+part2Tests = Tasty.testGroup "part 2 tests"
+    [ HUnit.testCase "row 1" $
+        Day02.evenDiv (sheet Vec.! 0) @?= Just (the @Int 4)
+    , HUnit.testCase "row 2" $
+        Day02.evenDiv (sheet Vec.! 1) @?= Just (the @Int 3)
+    , HUnit.testCase "row 3" $
+        Day02.evenDiv (sheet Vec.! 2) @?= Just (the @Int 2)
+    , HUnit.testCase "checksum" $
+        Day02.checksum2 sheet @?= 9 ]
+  where
+    sheet = Vec.fromList
+        [ Vec.fromList [ 5, 9, 2, 8 ]
+        , Vec.fromList [ 9, 4, 7, 3 ]
+        , Vec.fromList [ 3, 8, 6, 5 ] ]

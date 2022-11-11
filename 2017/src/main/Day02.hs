@@ -2,6 +2,8 @@ module Day02 where
 
 import Common
 import Common.Vector qualified as Comm.Vec
+import Control.Monad (guard)
+import Data.Maybe (listToMaybe)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vec
 import Flow ((.>))
@@ -19,6 +21,19 @@ maxDiff row
 checksum :: (Bounded a, Ord a, Num a) => Vector (Vector a) -> a
 checksum = fmap maxDiff .> sum
 
+evenDiv :: Integral a => Vector a -> Maybe a
+evenDiv vec = listToMaybe $ do
+    i <- [0 .. Vec.length vec]
+    j <- [0 .. i - 1]
+    let x = vec Vec.! i
+    let y = vec Vec.! j
+    let multiple = lcm x y
+    guard $ multiple `elem` [x, y]
+    pure $ multiple `div` gcd x y
+
+checksum2 :: Integral a => Vector (Vector a) -> a
+checksum2 = fmap (evenDiv .> maybe 0 id) .> sum
+
 main :: IO ()
 main = do
     text <- readInputFileUtf8 [Sys.osp|input/day-02.txt|]
@@ -26,3 +41,4 @@ main = do
     let raw = textRead @Int <<$>> rows
     let sheet = Vec.fromList <$> Vec.fromList raw
     print $ checksum sheet
+    print $ checksum2 sheet
