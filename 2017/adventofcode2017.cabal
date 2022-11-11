@@ -28,6 +28,7 @@ common common-lang-options
         , LambdaCase
         , NumericUnderscores
         , TypeApplications
+        , QuasiQuotes
 
 common common-lib-options
     import:
@@ -38,6 +39,7 @@ common common-lib-options
         , bytestring ^>=0.11.3
         , flow ^>=2.0
         , text ^>=2.0
+        , vector ^>=0.13
         , filepath ^>=1.4.100
 
 common common-runtime-options
@@ -57,17 +59,20 @@ library
     other-modules: Paths_adventofcode2017
     exposed-modules:
         , Common
+        , Common.Vector
         , Day01
+        , Day02
 
 library adventofcode2017-tests
     import: common-lib-options
     hs-source-dirs: spec
     build-depends:
         , adventofcode2017
-        , tasty
-        , tasty-hunit
+        , tasty ^>=1.4.2.3
+        , tasty-hunit ^>=0.10.0.3
     exposed-modules:
         , Test01
+        , Test02
 
 
 common common-exe-options
@@ -79,6 +84,11 @@ executable day-01
     mixins: adventofcode2017 (Day01 as Day)
     main-is: Run.hs
 
+executable day-02
+    import: common-exe-options
+    mixins: adventofcode2017 (Day02 as Day)
+    main-is: Run.hs
+
 
 common common-test-options
     import: common-runtime-options
@@ -87,5 +97,11 @@ common common-test-options
 test-suite test-01
     import: common-test-options
     mixins: adventofcode2017-tests (Test01 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-02
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test02 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
