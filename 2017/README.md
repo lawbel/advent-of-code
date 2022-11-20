@@ -35,17 +35,6 @@ approach as:
 
 ### Stack
 
-We're running on GHC-9.4.2 which at time of writing has no LTS or nightly
-stackage version. Once there has been such a release, stack should work
-simply by adding a `stack.yaml` file with contents
-
-```yaml
-packages: [.]
-resolver: lts-??.??
-```
-
-and then doing
-
 ```shell
 > stack build
 > stack run day-01
@@ -56,6 +45,21 @@ and then doing
 > stack repl adventofcode2017:lib
 ...
 >>> :load Day01
+```
+
+### Nix
+
+We provide a shell that has all tools etc. configured. Inside that, stack or
+cabal can be used like normal. Also, opening an editor from that shell with
+spawn it with $PATH etc. configured to provide matching versions of HLS
+specified in `shell.nix`.
+
+```shell
+> nix-shell  
+...
+> [nix-shell]$ stack build        
+> [nix-shell]$ cabal build        
+> [nix-shell]$ preferred-editor . 
 ```
 
 [hls]: https://github.com/haskell/haskell-language-server

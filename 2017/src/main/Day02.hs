@@ -8,7 +8,6 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vec
 import Flow ((.>))
 import Data.Text qualified as Text
-import System.OsPath qualified as Sys
 import Data.Char qualified as Char
 
 
@@ -36,7 +35,7 @@ checksum2 = fmap (evenDiv .> maybe 0 id) .> sum
 
 main :: IO ()
 main = do
-    text <- readInputFileUtf8 [Sys.osp|input/day-02.txt|]
+    text <- readInputFileUtf8 "input/day-02.txt"
     let rows = Text.split Char.isSpace <$> Text.lines text
     let raw = textRead @Int <<$>> rows
     let sheet = Vec.fromList <$> Vec.fromList raw

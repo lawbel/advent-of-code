@@ -16,8 +16,6 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text.Enc
 import Flow ((.>))
 import Paths_adventofcode2017 (getDataFileName)
-import System.OsPath (OsPath)
-import System.OsPath qualified as Sys
 
 
 -- | Can be a nice alternative to type annotations like @(5 :: Int)@ - instead
@@ -29,12 +27,11 @@ the = id
 (<<$>>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 f <<$>> xs = fmap f <$> xs
 
-readFileUtf8 :: OsPath -> IO Text
-readFileUtf8 = Sys.decodeUtf >=> Byte.readFile >=> pure . Text.Enc.decodeUtf8
+readFileUtf8 :: FilePath -> IO Text
+readFileUtf8 = Byte.readFile .> fmap Text.Enc.decodeUtf8
 
-readInputFileUtf8 :: OsPath -> IO Text
-readInputFileUtf8 =
-    Sys.decodeUtf >=> getDataFileName >=> Sys.encodeUtf >=> readFileUtf8
+readInputFileUtf8 :: FilePath -> IO Text
+readInputFileUtf8 = getDataFileName >=> readFileUtf8
 
 textShow :: Show a => a -> Text
 textShow = show .> Text.pack

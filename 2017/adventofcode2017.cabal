@@ -35,14 +35,14 @@ common common-lib-options
         , common-lang-options
         , common-ghc-lib-options
     build-depends:
-        , base ^>=4.17
-        , bytestring ^>=0.11.3
+        , base ^>=4.15
+        , bytestring ^>=0.10
         , flow ^>=2.0
-        , text ^>=2.0
-        , vector ^>=0.13
-        , filepath ^>=1.4.100
+        , text ^>=1.2
+        , vector ^>=0.12
+        , filepath ^>=1.4.2
         , linear ^>=1.21.10
-        , lens ^>=5.2
+        , lens ^>=5.0
         , interpolatedstring-perl6 ^>=1.0.2
 
 common common-runtime-options
