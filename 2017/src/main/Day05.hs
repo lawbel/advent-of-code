@@ -28,6 +28,13 @@ jump ref = ptrInBounds ref >>= \case
     True  -> Nothing <$ jumpInner ref
     False -> Just <$> STRef.readSTRef (ptr ref)
 
+-- | Same as 'jump', except that it uses the rule from part two and sometimes
+-- decrements the @ptr@.
+jump' :: List s -> ST s (Maybe Int)
+jump' ref = ptrInBounds ref >>= \case
+    True  -> Nothing <$ jumpInner' ref
+    False -> Just <$> STRef.readSTRef (ptr ref)
+
 ptrInBounds :: List s -> ST s Bool
 ptrInBounds MkList{..} = do
     i <- STRef.readSTRef ptr
@@ -40,6 +47,16 @@ jumpInner MkList{..} = do
     i <- STRef.readSTRef ptr
     offset <- Vec.M.read list i
     Vec.M.modify list (+ 1) i
+    STRef.modifySTRef ptr (+ offset)
+
+-- | Same as 'jumpInner', except that it uses the rule from part two and
+-- sometimes decrements the @ptr@.
+jumpInner' :: List s -> ST s ()
+jumpInner' MkList{..} = do
+    i <- STRef.readSTRef ptr
+    offset <- Vec.M.read list i
+    let update =  if offset >= 3 then subtract 1 else (+ 1)
+    Vec.M.modify list update i
     STRef.modifySTRef ptr (+ offset)
 
 -- | Attempt to call 'jump' the given @Int@ number of times, returning:
@@ -67,13 +84,32 @@ jumpUntilExit ref = do
             False -> STRef.readSTRef count
     loop
 
+-- | Same as 'jumpUntilExit', except that it uses the rule from part two and
+-- sometimes decrements the @ptr@.
+jumpUntilExit' :: List s -> ST s Int
+jumpUntilExit' ref = do
+    count <- STRef.newSTRef 0
+    let loop = ptrInBounds ref >>= \case
+            True -> do
+                jumpInner' ref
+                STRef.modifySTRef' count (+ 1)
+                loop
+            False -> STRef.readSTRef count
+    loop
+
 part1 :: Vector Int -> Int
 part1 initial = ST.runST $ do
     list <- MkList <$> Vec.thaw initial <*> STRef.newSTRef 0
     jumpUntilExit list
+
+part2 :: Vector Int -> Int
+part2 initial = ST.runST $ do
+    list <- MkList <$> Vec.thaw initial <*> STRef.newSTRef 0
+    jumpUntilExit' list
 
 main :: IO ()
 main = do
     text <- readInputFileUtf8 "input/day-05.txt"
     let list = Vec.fromList (textRead @Int <$> Text.lines text)
     print $ part1 list
+    print $ part2 list

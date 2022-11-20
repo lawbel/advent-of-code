@@ -18,7 +18,7 @@ tests :: TestTree
 tests = Tasty.testGroup "tests" [unitTests]
 
 unitTests :: TestTree
-unitTests = Tasty.testGroup "unit tests" [part1Tests]
+unitTests = Tasty.testGroup "unit tests" [part1Tests, part2Tests]
 
 part1Tests :: TestTree
 part1Tests = Tasty.testGroup "part 1 tests"
@@ -49,3 +49,15 @@ part1Tests = Tasty.testGroup "part 1 tests"
     runUntilExit = ST.runST $ do
         list <- Day05.MkList <$> Vec.thaw initial <*> STRef.newSTRef 0
         Day05.jumpUntilExit list
+
+part2Tests :: TestTree
+part2Tests = Tasty.testGroup "part 2 tests"
+    [ HUnit.testCase "running until exit" $
+        runUntilExit @?= (10, Vec.fromList [2, 3, 2, 3, -1]) ]
+  where
+    initial = Vec.fromList @Int [0, 3, 0, 1, -3]
+    runUntilExit = ST.runST $ do
+        list <- Day05.MkList <$> Vec.thaw initial <*> STRef.newSTRef 0
+        n <- Day05.jumpUntilExit' list
+        frozen <- Vec.freeze (Day05.list list)
+        pure (n, frozen)
