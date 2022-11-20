@@ -19,7 +19,7 @@ tests :: TestTree
 tests = Tasty.testGroup "tests" [unitTests]
 
 unitTests :: TestTree
-unitTests = Tasty.testGroup "unit tests" [part1Tests]
+unitTests = Tasty.testGroup "unit tests" [part1Tests, part2Tests]
 
 part1Tests :: TestTree
 part1Tests = Tasty.testGroup "part 1 tests" $
@@ -47,7 +47,16 @@ loopUntilRepeat = HUnit.testCase "loop until repeat" $
     let initial = Vec.fromList [0, 2, 7, 0]
         result = ST.runST $ do
             memory <- Vec.thaw initial
-            n <- Day06.redistributeUntilRepeat memory
+            n <- fst <$> Day06.redistributeUntilRepeat memory
             frozen <- Vec.freeze memory
             pure (n, frozen)
     in  result @?= (5, Vec.fromList [2, 4, 1, 2])
+
+part2Tests :: TestTree
+part2Tests = Tasty.testGroup "part 2 tests"
+    [ HUnit.testCase "loop until repeat" $ result @?= 4 ]
+  where
+    initial = Vec.fromList [0, 2, 7, 0]
+    result = ST.runST $ do
+        memory <- Vec.thaw initial
+        snd <$> Day06.redistributeUntilRepeat memory

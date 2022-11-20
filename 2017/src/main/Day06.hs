@@ -28,7 +28,14 @@ redistribute memory = do
     for_ [i + 1 .. i + remainder] $ \j ->
         Vec.M.modify memory (+ 1) (j `mod` len)
 
-redistributeUntilRepeat :: MVector s Int -> ST s Int
+-- | Calls 'redistribute' repeatedly, keeping track of the different states of
+-- the given vector, until the contents of the vector is repeated.
+-- Returns @(cycles, loopSize)@ where:
+--
+--   * @cycles@ is the total number of times we called 'redistribute'
+--   * @loopSize@ is the number of times we called 'redistribute' since we saw
+--     the previous occurence of the vector.
+redistributeUntilRepeat :: MVector s Int -> ST s (Int, Int)
 redistributeUntilRepeat memory = do
     count <- STRef.newSTRef 0
     seen <- Table.new
@@ -38,17 +45,29 @@ redistributeUntilRepeat memory = do
             STRef.modifySTRef' count (+ 1)
             frozen <- Vec.freeze memory
             Table.lookup seen frozen >>= \case
-                Nothing -> Table.insert seen frozen () >> loop
-                Just _  -> STRef.readSTRef count
+                Nothing -> do
+                    STRef.readSTRef count >>= Table.insert seen frozen
+                    loop
+                Just n -> do
+                    cycles <- STRef.readSTRef count
+                    pure (cycles, cycles - n)
 
-    Vec.freeze memory >>= flip (Table.insert seen) ()
+    Vec.freeze memory >>= flip (Table.insert seen) 0
     loop
 
 part1 :: Vector Int -> Int
-part1 vector = ST.runST $ Vec.thaw vector >>= redistributeUntilRepeat
+part1 vector = ST.runST $ do
+    frozen <- Vec.thaw vector
+    fst <$> redistributeUntilRepeat frozen
+
+part2 :: Vector Int -> Int
+part2 vector = ST.runST $ do
+    frozen <- Vec.thaw vector
+    snd <$> redistributeUntilRepeat frozen
 
 main :: IO ()
 main = do
     let memory = Vec.fromList
             [4, 10, 4, 1, 8, 4, 9, 14, 5, 1, 14, 15, 0, 15, 3, 5]
     print $ part1 memory
+    print $ part2 memory
