@@ -41,7 +41,11 @@ common common-lib-options
         , containers ^>=0.6.4
         , text ^>=1.2
         , hashtables ^>=1.2.4
+        , megaparsec ^>=9.2
         , vector-instances ^>=3.4
+        , pretty-simple ^>=4.0
+        , unordered-containers ^>=0.2.17
+        , hashable ^>=1.3.5
         , vector ^>=0.12
         , filepath ^>=1.4.2
         , linear ^>=1.21.10
@@ -72,6 +76,7 @@ library
         , Day04
         , Day05
         , Day06
+        , Day08
 
 library adventofcode2017-tests
     import: common-lib-options
@@ -87,6 +92,7 @@ library adventofcode2017-tests
         , Test04
         , Test05
         , Test06
+        , Test08
 
 
 common common-exe-options
@@ -121,6 +127,11 @@ executable day-05
 executable day-06
     import: common-exe-options
     mixins: adventofcode2017 (Day06 as Day)
+    main-is: Run.hs
+
+executable day-08
+    import: common-exe-options
+    mixins: adventofcode2017 (Day08 as Day)
     main-is: Run.hs
 
 
@@ -161,5 +172,11 @@ test-suite test-05
 test-suite test-06
     import: common-test-options
     mixins: adventofcode2017-tests (Test06 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-08
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test08 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
