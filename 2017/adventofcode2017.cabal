@@ -78,23 +78,6 @@ library
         , Day06
         , Day08
 
-library adventofcode2017-tests
-    import: common-lib-options
-    hs-source-dirs: spec
-    build-depends:
-        , adventofcode2017
-        , tasty ^>=1.4.2.3
-        , tasty-hunit ^>=0.10.0.3
-    exposed-modules:
-        , Test01
-        , Test02
-        , Test03
-        , Test04
-        , Test05
-        , Test06
-        , Test08
-
-
 common common-exe-options
     import: common-runtime-options
     build-depends: adventofcode2017
@@ -134,6 +117,22 @@ executable day-08
     mixins: adventofcode2017 (Day08 as Day)
     main-is: Run.hs
 
+
+library adventofcode2017-tests
+    import: common-lib-options
+    hs-source-dirs: spec
+    build-depends:
+        , adventofcode2017
+        , tasty ^>=1.4.2.3
+        , tasty-hunit ^>=0.10.0.3
+    exposed-modules:
+        , Test01
+        , Test02
+        , Test03
+        , Test04
+        , Test05
+        , Test06
+        , Test08
 
 common common-test-options
     import: common-runtime-options
