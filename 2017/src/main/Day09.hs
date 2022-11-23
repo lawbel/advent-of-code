@@ -24,7 +24,9 @@ type Parser = Parsec Void Text
 newtype Group = MkGroup (Vector (Either Garbage Group))
     deriving (Eq, Ord, Show)
 
-newtype Garbage = MkGarbage Text
+data Garbage = MkGarbage
+    { contents :: Text
+    , noCancelGarbage :: Int }
     deriving (Eq, Ord, Show)
 
 parseGroup :: Parser Group
@@ -39,14 +41,19 @@ parseGroup = do
 parseGarbage :: Parser Garbage
 parseGarbage = do
     void $ Parse.single '<'
-    garbage <- many $ asum
-        [ Text.singleton <$> Parse.noneOf ['!', '>']
-        , Text.pack <$> do
+    result <- many $ asum
+        [ do
+            char <- Parse.noneOf ['!', '>']
+            pure (1, Text.singleton char)
+        , do
             a <- Parse.single '!'
             b <- Parse.anySingle
-            pure [a, b] ]
+            pure (0, Text.pack [a, b]) ]
     void $ Parse.single '>'
-    pure $ MkGarbage $ mconcat garbage
+    let (counts, garbage) = unzip result
+    pure $ MkGarbage
+        { contents = Text.concat garbage
+        , noCancelGarbage = sum counts }
 
 mapSum :: Num b => (a -> b) -> Vector a -> b
 mapSum f = Vec.map f .> Vec.sum
@@ -58,9 +65,6 @@ scoreGroups = go 1
     go level (MkGroup inner) =
         let groups = Vec.mapMaybe (preview _Right) inner
         in  level + mapSum (go (level + 1)) groups
-
-noCancelGarbage :: Garbage -> Int
-noCancelGarbage (MkGarbage text) = Text.length text - 2 * Text.count "!" text
 
 noCancelGroup :: Group -> Int
 noCancelGroup (MkGroup inner) =
