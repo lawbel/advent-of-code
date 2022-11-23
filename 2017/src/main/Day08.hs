@@ -104,6 +104,25 @@ evalInstr MkInstr{..} table = case condition of
                 then HashMap.alter alter register table
                 else table
 
+evalInstrTraceValue
+    :: (Eq k, Hashable k, Num v, Ord v)
+    => Instr k v -> HashMap k v -> (HashMap k v, Maybe v)
+evalInstrTraceValue MkInstr{..} table = case condition of
+    leftKey :<:  right -> eval leftKey (<)  right
+    leftKey :<=: right -> eval leftKey (<=) right
+    leftKey :>:  right -> eval leftKey (>)  right
+    leftKey :>=: right -> eval leftKey (>=) right
+    leftKey :==: right -> eval leftKey (==) right
+    leftKey :!=: right -> eval leftKey (/=) right
+  where
+    eval leftKey op right =
+        let left = HashMap.findWithDefault 0 leftKey table
+        in  if left `op` right
+                then (HashMap.insert register result table, Just result)
+                else (table, Nothing)
+    result = evalOperator value operator $
+        HashMap.findWithDefault 0 register table
+
 evalInstrs
     :: (Eq k, Hashable k, Num v, Ord v)
     => Vector (Instr k v) -> HashMap k v -> HashMap k v
@@ -114,10 +133,23 @@ evalInstrs instrs table =
     -- order matters here
     Vec.foldl' (flip evalInstr) table instrs
 
+evalInstrsTraceMax
+    :: (Eq k, Hashable k, Num v, Ord v)
+    => Vector (Instr k v) -> HashMap k v -> v -> (HashMap k v, v)
+evalInstrsTraceMax instrs table def =
+    Vec.foldl' evalTrace (table, def) instrs
+  where
+    evalTrace (before, acc) instr =
+        let (after, value) = evalInstrTraceValue instr before
+        in  (after, maybe acc (max acc) value)
+
 part1 :: Vector (Instr Text Int) -> Int
 part1 = flip evalInstrs HashMap.empty .> HashMap.elems .> \case
     []     -> 0
     n : ns -> List.foldl' max n ns
+
+part2 :: Vector (Instr Text Int) -> Int
+part2 instrs = snd $ evalInstrsTraceMax instrs HashMap.empty 0
 
 main :: IO ()
 main = do
@@ -126,3 +158,4 @@ main = do
         Left err -> die $ Parse.errorBundlePretty err
         Right instrs -> do
             print $ part1 instrs
+            print $ part2 instrs

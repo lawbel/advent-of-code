@@ -125,6 +125,8 @@ library adventofcode2017-tests
         , adventofcode2017
         , tasty ^>=1.4.2.3
         , tasty-hunit ^>=0.10.0.3
+        , tasty-hedgehog ^>=1.1.0
+        , hedgehog ^>=1.0.5
     exposed-modules:
         , Test01
         , Test02
