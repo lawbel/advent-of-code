@@ -78,6 +78,7 @@ library
         , Day06
         , Day08
         , Day09
+        , Day12
 
 common common-exe-options
     import: common-runtime-options
@@ -123,6 +124,11 @@ executable day-09
     mixins: adventofcode2017 (Day09 as Day)
     main-is: Run.hs
 
+executable day-12
+    import: common-exe-options
+    mixins: adventofcode2017 (Day12 as Day)
+    main-is: Run.hs
+
 
 library adventofcode2017-tests
     import: common-lib-options
@@ -142,6 +148,7 @@ library adventofcode2017-tests
         , Test06
         , Test08
         , Test09
+        , Test12
 
 common common-test-options
     import: common-runtime-options
@@ -192,5 +199,11 @@ test-suite test-08
 test-suite test-09
     import: common-test-options
     mixins: adventofcode2017-tests (Test09 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-12
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test12 as Test)
     main-is: Spec.hs
     type: exitcode-stdio-1.0
