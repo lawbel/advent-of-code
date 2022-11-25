@@ -56,8 +56,21 @@ connected m pipes = go m (HashSet.singleton m)
     direct n = HashSet.delete n $ HashSet.unions $ map outputIDs $
         filter (inputID .> (==) n) pipes
 
+groups :: [Pipe] -> [HashSet ID]
+groups pipes = go $ HashSet.fromList $ fmap inputID pipes
+  where
+    go :: HashSet ID -> [HashSet ID]
+    go ids = case HashSet.toList ids of
+        []    -> []
+        n : _ ->
+            let group = connected n pipes
+            in  group : go (ids `HashSet.difference` group)
+
 part1 :: [Pipe] -> Int
 part1 = connected (MkID 0) .> HashSet.size
+
+part2 :: [Pipe] -> Int
+part2 = groups .> length
 
 main :: IO ()
 main = do
@@ -66,3 +79,4 @@ main = do
         Left err -> die $ Parse.errorBundlePretty err
         Right pipes -> do
             print $ part1 pipes
+            print $ part2 pipes
