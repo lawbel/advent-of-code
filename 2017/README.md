@@ -49,17 +49,30 @@ approach as:
 
 ### Nix
 
-We provide a shell that has all tools etc. configured. Inside that, stack or
-cabal can be used like normal. Also, opening an editor from that shell with
-spawn it with $PATH etc. configured to provide matching versions of HLS
-specified in `shell.nix`.
+We have a `default.nix` that should be usable for building the whole project
+(via `nix-build`), creating executables named `day-01`, `day-02` etc and
+running all the test suites at the same time. It also has all tools etc.
+configured, so that running `nix-shell` should spawn a shell where stack or
+cabal can be used like normal. Also, opening an editor from that shell will
+spawn it with `$PATH` etc. configured to provide matching versions of HLS
+needed for developing or browsing the code.
+
+#### Building
 
 ```shell
-> nix-shell  
+> nix-build
 ...
-> [nix-shell]$ stack build        
-> [nix-shell]$ cabal build        
-> [nix-shell]$ preferred-editor . 
+> ./result/bin/day-01
+```
+
+#### Everything Else
+
+```shell
+> nix-shell
+...
+> [nix-shell]$ stack build
+> [nix-shell]$ cabal build
+> [nix-shell]$ preferred-editor .
 ```
 
 [hls]: https://github.com/haskell/haskell-language-server
