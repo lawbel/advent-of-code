@@ -1,3 +1,4 @@
-dist-newstyle/
-.stack-work/
-stack.yaml.lock
+/dist-newstyle/
+/.stack-work/
+/result
+/stack.yaml.lock

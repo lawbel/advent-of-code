@@ -1,7 +1,7 @@
 let
   pkgs = import <nixpkgs> {};
 in
-  pkgs.haskellPackages.developPackage {
+  pkgs.haskell.packages.ghc902.developPackage {
     root = ./.;
     name = "adventofcode2017";
     modifier = deriv: pkgs.haskell.lib.addBuildTools deriv [
