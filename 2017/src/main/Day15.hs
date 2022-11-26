@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Day15 where
 
@@ -6,20 +7,35 @@ import Data.Bits ((.&.))
 import Data.Word (Word64)
 
 
-newtype Generator = MkGenerator Word64
-    deriving (Eq, Ord, Show)
+data Generator = MkGenerator
+    { factor :: Word64
+    , criteria :: Word64 -> Bool }
 
 genA :: Generator
-genA = MkGenerator 16_807
+genA = MkGenerator
+    { factor = 16_807
+    , criteria = const True }
 
 genB :: Generator
-genB = MkGenerator 48_271
+genB = MkGenerator
+    { factor = 48_271
+    , criteria = const True }
+
+genA' :: Generator
+genA' = genA {criteria = \n -> n `mod` 4 == 0}
+
+genB' :: Generator
+genB' = genB {criteria = \n -> n `mod` 8 == 0}
 
 modulus :: Word64
 modulus = 2_147_483_647
 
 next :: Generator -> Word64 -> Word64
-next (MkGenerator factor) n = (n * factor) `mod` modulus
+next gen@MkGenerator{..} n
+    | criteria m = m
+    | otherwise  = next gen m
+  where
+    m = (n * factor) `mod` modulus
 
 lowest16BitsEq :: Word64 -> Word64 -> Bool
 lowest16BitsEq n m = (n .&. mask) == (m .&. mask)
@@ -41,9 +57,13 @@ judge limit (gen1, seed1) (gen2, seed2) = go limit 0 seed1 seed2
 part1 :: Word64 -> Word64 -> Int
 part1 seedA seedB = judge 40_000_000 (genA, seedA) (genB, seedB)
 
+part2 :: Word64 -> Word64 -> Int
+part2 seedA seedB = judge 5_000_000 (genA', seedA) (genB', seedB)
+
 main :: IO ()
 main = do
     print $ part1 seedA seedB
+    print $ part2 seedA seedB
   where
     seedA = 873
     seedB = 583
