@@ -16,6 +16,9 @@ module Common
     , duomap
 
     , (+=)
+
+    , _x
+    , _y
     ) where
 
 import Control.Arrow ((>>>))
@@ -28,7 +31,9 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text.Enc
 import Data.Void (Void)
-import Optics (Is, A_Setter, Optic')
+import Linear (R1, R2)
+import Linear qualified
+import Optics (Is, A_Setter, Optic', Lens', lensVL)
 import Optics.State.Operators ((%=))
 import Text.Megaparsec (Parsec)
 import Text.Read (readMaybe)
@@ -65,3 +70,9 @@ optic += x = optic %= (+ x)
 
 cons :: a -> [a] -> [a]
 cons x xs = x : xs
+
+_x :: R1 t => Lens' (t a) a
+_x = lensVL Linear._x
+
+_y :: R2 t => Lens' (t a) a
+_y = lensVL Linear._y
