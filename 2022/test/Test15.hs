@@ -3,7 +3,6 @@
 module Test15 where
 
 import Control.Arrow ((>>>))
-import Control.Monad (guard)
 import Data.ExtendedReal (Extended(Finite))
 import Data.Interval (Interval)
 import Data.Interval qualified as Interval
@@ -11,7 +10,7 @@ import Data.IntervalSet (IntervalSet)
 import Data.IntervalSet qualified as IntervalSet
 import Data.Set (Set)
 import Data.Set qualified as Set
-import Hedgehog (Gen, (===), Property)
+import Hedgehog (Gen, (===))
 import Hedgehog qualified as Hedge
 import Hedgehog.Gen qualified as Hedge.G
 import Hedgehog.Range qualified as Hedge.R
@@ -32,26 +31,24 @@ genRow = Hedge.G.int $ Hedge.R.linear 5 95
 genReading :: Gen Reading
 genReading = do
     sensor <- genV2 $ Hedge.G.int $ Hedge.R.linear 35 65
-    beacon <- genV2 $ Hedge.G.int $ Hedge.R.linear 41 60
+    beacon <- genV2 $ Hedge.G.int $ Hedge.R.linear 40 60
     pure $ Day15.MkReading
         { Day15.sensorPos = sensor
         , Day15.closestBeacon = beacon }
   where
     genV2 g = V2 <$> g <*> g
 
-quickToNaive :: Int -> Maybe (Interval Int, Maybe Int) -> Set (V2 Int)
+quickToNaive :: Int -> Maybe (Interval Int) -> Set (V2 Int)
 quickToNaive row = \case
     Nothing -> Set.empty
-    Just (interval, xMaybe) -> Set.fromList $ do
+    Just interval -> Set.fromList $ do
         x <- [lower interval .. upper interval]
-        guard $ Just x /= xMaybe
         pure $ V2 x row
 
-quickToNaives :: Int -> (IntervalSet Int, Set Int) -> Set (V2 Int)
-quickToNaives row (intervals, beacons) = Set.fromList $ do
+quickToNaives :: Int -> IntervalSet Int -> Set (V2 Int)
+quickToNaives row intervals = Set.fromList $ do
     interval <- IntervalSet.toList intervals
     x <- [lower interval .. upper interval]
-    guard $ x `Set.notMember` beacons
     pure $ V2 x row
 
 
@@ -73,7 +70,7 @@ propTests = Tasty.testGroup "property tests"
         Hedge.property $ do
             row <- Hedge.forAll genRow
             readings <- Hedge.forAll $
-                Hedge.G.list (Hedge.R.linear 1 4) genReading
+                Hedge.G.list (Hedge.R.linear 1 5) genReading
             Day15.rowCantHaveBeaconsNaive row readings ===
                 quickToNaives row (Day15.rowCantHaveBeacons row readings) ]
 

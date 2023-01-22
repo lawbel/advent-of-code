@@ -4,8 +4,8 @@
 
 module Day15 where
 
+import Control.Arrow ((>>>))
 import Data.ExtendedReal (Extended(Finite))
-import Data.Foldable qualified as Fold
 import Data.Interval (Interval, (<=..<=))
 import Data.Interval qualified as Interval
 import Data.IntervalSet (IntervalSet)
@@ -50,45 +50,23 @@ parseReadings = Vec.fromList <$> Parse.sepEndBy parseReading Parse.C.eol
 distFromBeacon :: Reading -> Int
 distFromBeacon r = sum $ abs $ closestBeacon r - sensorPos r
 
--- | Returns @Nothing@ if there are no positions that can't have beacons.
--- Otherwise, returns @Just (xInterval, beacon)@ where
---
---   * the positions that cannot have beacons are within @xInterval@,
---   * @beacon :: Maybe Int@ indicates whether there is a single beacon (the
---     closest one to the sensor) within that range, and if so, contains the
---     @x@-coordinate of said beacon.
-rowCantHaveBeacon :: Int -> Reading -> Maybe (Interval Int, Maybe Int)
+rowCantHaveBeacon :: Int -> Reading -> Maybe (Interval Int)
 rowCantHaveBeacon row reading
-    | radius >= 0 = Just
-        ( Finite (x - radius) <=..<= Finite (x + radius)
-        , if row == view (#closestBeacon % _y) reading
-            then Just $ view (#closestBeacon % _x) reading
-            else Nothing )
-    | otherwise = Nothing
+    | radius < 0 = Nothing
+    | row /= view (#closestBeacon % _y) reading = Just $
+        Finite (x - radius) <=..<= Finite (x + radius)
+    | x < view (#closestBeacon % _x) reading = Just $
+        Finite (x - radius) <=..<= Finite (x + radius - 1)
+    | otherwise = Just $
+        Finite (x - radius + 1) <=..<= Finite (x + radius)
   where
     radius = distFromBeacon reading - abs (row - y)
     x = reading ^. #sensorPos % _x
     y = reading ^. #sensorPos % _y
 
--- | Returns all the intervals that cannot have beacons, together with a set
--- of beacon x-coordinates that are exceptions to this rule and are within the
--- previous intervals.
-rowCantHaveBeacons
-    :: Foldable t => Int -> t Reading -> (IntervalSet Int, Set Int)
-rowCantHaveBeacons row = foldMap $ \reading ->
-    case rowCantHaveBeacon row reading of
-        Just (interval, xMaybe) ->
-            ( IntervalSet.singleton interval
-            , maybe Set.empty Set.singleton xMaybe )
-        Nothing -> mempty
-
-rowCantHaveBeaconsCount :: Foldable t => Int -> t Reading -> Int
-rowCantHaveBeaconsCount row readings = widths - Set.size beacons
-  where
-    (intervals, beacons) = rowCantHaveBeacons row readings
-    widths = sum $ do
-        interval <- IntervalSet.toList intervals
-        pure $ Interval.width interval + 1
+rowCantHaveBeacons :: Foldable t => Int -> t Reading -> IntervalSet Int
+rowCantHaveBeacons row = foldMap $
+    rowCantHaveBeacon row >>> maybe IntervalSet.empty IntervalSet.singleton
 
 
 rowCantHaveBeaconNaive :: Int -> Reading -> Set (V2 Int)
@@ -111,7 +89,10 @@ rowCantHaveBeaconsNaive row = foldMap $ rowCantHaveBeaconNaive row
 
 
 part1 :: Vector Reading -> Int
-part1 = rowCantHaveBeaconsCount 2_000_000
+part1 = rowCantHaveBeacons 2_000_000
+    >>> IntervalSet.toList
+    >>> fmap (Interval.width >>> (+) 1)
+    >>> sum
 
 main :: IO ()
 main = do
