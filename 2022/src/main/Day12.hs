@@ -5,14 +5,15 @@
 module Day12 where
 
 import Control.Applicative (some)
-import Control.Arrow ((<<<), (>>>))
+import Control.Arrow ((<<<))
 import Control.Monad (when)
 import Control.Monad.State (State)
 import Control.Monad.State qualified as State
 import Data.Char qualified as Char
 import Data.Containers.ListUtils (nubInt)
+import Data.ExtendedReal (Extended)
+import Data.ExtendedReal qualified as Ext
 import Data.Foldable (for_)
-import Data.Functor ((<&>))
 import Data.List qualified as List
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -33,14 +34,17 @@ import Common (Parser, cons, readInputFileUtf8)
 
 -- types
 
-data Extended a = Base a | Infinity
-    deriving (Eq, Ord, Show)
-
-data Algo = MkAlgo
+data AStar = MkAStar
     { openSet :: MinPQueue (Extended Int) (V2 Int)
     , cameFrom :: Map (V2 Int) (V2 Int)
-    , gScore :: Map (V2 Int) (Extended Int)
-    , fScore :: Map (V2 Int) (Extended Int) }
+    , scoreFromStart :: Map (V2 Int) (Extended Int)
+    , scoreToGoal :: Map (V2 Int) (Extended Int) }
+    deriving (Eq, Generic, Ord, Show)
+
+data Dijkstra = MkDijkstra
+    { openQueue :: MinPQueue (Extended Int) (V2 Int)
+    , previous :: Map (V2 Int) (V2 Int)
+    , distToEnd :: Map (V2 Int) (Extended Int) }
     deriving (Eq, Generic, Ord, Show)
 
 
@@ -58,40 +62,42 @@ parseMatrix = do
 
 parseHill :: Parser (V2 Int, V2 Int, Matrix Char)
 parseHill = do
-    mat <- parseMatrix
-
-    -- watch out: the Matrix api uses (y, x) co-ordinates which are 1-based
-    let pts = (,) <$> [1 .. Matrix.nrows mat] <*> [1 .. Matrix.ncols mat]
-    let findPt c = do
-            i <- List.findIndex (\pt -> mat Matrix.! pt == c) pts
+    matrix <- parseMatrix
+    let pts = V2 <$> [1 .. Matrix.ncols matrix] <*> [1 .. Matrix.nrows matrix]
+    let findPt char = do
+            i <- List.findIndex (\pt -> matrix .!. pt == char) pts
             pure $ pts !! i
-
     case (findPt 'S', findPt 'E') of
         (Nothing, _) -> fail "no start 'S' on hill"
         (_, Nothing) -> fail "no end 'E' on hill"
-        (Just s, Just e) -> do
-            let hill = mat & Matrix.setElem 'a' s & Matrix.setElem 'z' e
-            let mkV2 = uncurry $ flip V2
-            pure (mkV2 s, mkV2 e, hill)
-
+        (Just start, Just end) -> do
+            let hill = matrix & setElem 'a' start & setElem 'z' end
+            pure (start, end, hill)
 
 -- general-purpose functions
 
-add :: Num a => Extended a -> Extended a -> Extended a
-add (Base x) (Base y) = Base (x + y)
-add _        _        = Infinity
+(.!.) :: Matrix a -> V2 Int -> a
+matrix .!. V2 x y = matrix Matrix.! (y, x)
 
--- | Adds the given key-value pair into the queue, unless the value is already
--- present somewhere in the queue, in which case it does nothing.
-addQueue :: (Ord k, Eq a) => k -> a -> MinPQueue k a -> MinPQueue k a
-addQueue key val queue
+setElem :: a -> V2 Int -> Matrix a -> Matrix a
+setElem val (V2 x y) = Matrix.setElem val (y, x)
+
+inBounds :: V2 Int -> Matrix a -> Bool
+inBounds (V2 x y) matrix =
+    (1 <= x && x <= Matrix.ncols matrix) &&
+    (1 <= y && y <= Matrix.nrows matrix)
+
+-- | Adds the given key-value pair into the queue. If it is already present
+-- somewhere in the queue, then it does nothing.
+insertQueue :: (Ord k, Eq a) => k -> a -> MinPQueue k a -> MinPQueue k a
+insertQueue key val queue
     | val `elem` Queue.elemsU queue = queue
     | otherwise = Queue.insert key val queue
 
 popQueue :: Ord k => State (MinPQueue k a) (Maybe a)
-popQueue = State.state $ \q -> case Queue.minView q of
-    Nothing        -> (Nothing, q)
-    Just (val, q') -> (Just val, q')
+popQueue = State.state $ \queue -> case Queue.minView queue of
+    Nothing         -> (Nothing, queue)
+    Just (val, new) -> (Just val, new)
 
 adjacent :: Num a => V2 a -> [V2 a]
 adjacent (V2 x y) =
@@ -106,50 +112,93 @@ manhattan u v = sum $ abs $ v - u
 
 -- A* implementation
 
-aStar :: Matrix Char -> V2 Int -> State Algo (Maybe [V2 Int])
+aStar :: Matrix Char -> V2 Int -> State AStar (Maybe [V2 Int])
 aStar matrix goal = zoom #openSet popQueue >>= \case
-    Nothing                -> pure Nothing
-    Just cur | cur == goal -> fmap (reverse >>> Just) (backtrace cur)
-    Just current           -> do
-        let check nbr = inBounds nbr && (value nbr <= value current + 1)
-        let neighbours = filter check $ adjacent current
+    Nothing -> pure Nothing
+    Just cur | cur == goal -> fmap (Just <<< reverse) (backtrace cur)
+    Just cur -> do
+        let check nbr = (nbr `inBounds` matrix) && (value nbr <= value cur + 1)
+        let neighbours = filter check $ adjacent cur
         for_ neighbours $ \nbr -> do
-            tentative <- add (Base 1) <$> findG current
-            score <- findG nbr
+            tentative <- (+ Ext.Finite 1) <$> fromStart cur
+            score <- fromStart nbr
             when (tentative < score) $ do
-                let heuristic = tentative `add` Base (manhattan nbr goal)
-                #cameFrom % at nbr ?= current
-                #gScore % at nbr ?= tentative
-                #fScore % at nbr ?= heuristic
-                #openSet %= addQueue heuristic nbr
+                let heuristic = tentative + Ext.Finite (manhattan nbr goal)
+                #cameFrom % at nbr ?= cur
+                #scoreFromStart % at nbr ?= tentative
+                #scoreToGoal % at nbr ?= heuristic
+                #openSet %= insertQueue heuristic nbr
         aStar matrix goal
   where
-    findG pt = Map.findWithDefault Infinity pt <$> use #gScore
-    value (V2 x y) = Char.ord $ matrix Matrix.! (y, x)
-    inBounds (V2 x y) =
-        (1 <= x && x <= Matrix.ncols matrix) &&
-        (1 <= y && y <= Matrix.nrows matrix)
+    fromStart pt = Map.findWithDefault Ext.PosInf pt <$> use #scoreFromStart
+    value pt = Char.ord (matrix .!. pt)
 
-backtrace :: V2 Int -> State Algo [V2 Int]
+backtrace :: V2 Int -> State AStar [V2 Int]
 backtrace current = use (#cameFrom % at current) >>= \case
     Nothing   -> pure [current]
     Just prev -> cons current <$> backtrace prev
 
 shortestPath :: V2 Int -> V2 Int -> Matrix Char -> Maybe [V2 Int]
 shortestPath start goal matrix =
-    State.evalState (aStar matrix goal) $ MkAlgo
+    State.evalState (aStar matrix goal) $ MkAStar
         { openSet = Queue.singleton heuristic start
         , cameFrom = Map.empty
-        , gScore = Map.singleton start (Base 0)
-        , fScore = Map.singleton start heuristic }
+        , scoreFromStart = Map.singleton start (Ext.Finite 0)
+        , scoreToGoal = Map.singleton start heuristic }
   where
-    heuristic = Base $ manhattan start goal
+    heuristic = Ext.Finite $ manhattan start goal
+
+
+dijkstra :: Matrix Char -> State Dijkstra ()
+dijkstra matrix = zoom #openQueue popQueue >>= \case
+    Nothing -> pure ()
+    Just cur -> do
+        let check nbr = (nbr `inBounds` matrix) && (value cur <= value nbr + 1)
+        let neighbours = filter check $ adjacent cur
+        for_ neighbours $ \nbr -> do
+            tentative <- (+ Ext.Finite 1) <$> toEnd cur
+            score <- toEnd nbr
+            when (tentative < score) $ do
+                #previous % at nbr ?= cur
+                #distToEnd % at nbr ?= tentative
+                #openQueue %= insertQueue tentative nbr
+        dijkstra matrix
+  where
+    toEnd pt = Map.findWithDefault Ext.PosInf pt <$> use #distToEnd
+    value pt = Char.ord (matrix .!. pt)
+
+traceback :: V2 Int -> State Dijkstra [V2 Int]
+traceback current = use (#previous % at current) >>= \case
+    Nothing   -> pure [current]
+    Just prev -> cons current <$> traceback prev
+
+shortestTrail :: Char -> V2 Int -> Matrix Char -> Maybe [V2 Int]
+shortestTrail char end matrix = flip State.evalState initial $ do
+    dijkstra matrix
+    paths <- Map.filterWithKey fromChar <$> use #distToEnd
+    let minDist x = x == Map.foldl' min Ext.PosInf paths
+    case Map.keys $ Map.filter minDist paths of
+        path : _ -> fmap (Just <<< reverse) (traceback path)
+        _        -> pure Nothing
+  where
+    initial = MkDijkstra
+        { openQueue = Queue.singleton (Ext.Finite 0) end
+        , previous = Map.empty
+        , distToEnd = Map.singleton end (Ext.Finite 0) }
+    fromChar pt _ = matrix .!. pt == char
 
 
 -- main hook
 
 part1 :: V2 Int -> V2 Int -> Matrix Char -> Maybe Int
-part1 start end hill = shortestPath start end hill <&> \path -> length path - 1
+part1 start end hill = do
+    path <- shortestPath start end hill
+    pure $ length path - 1
+
+part2 :: Char -> V2 Int -> Matrix Char -> Maybe Int
+part2 char end hill = do
+    trail <- shortestTrail char end hill
+    pure $ length trail - 1
 
 main :: IO ()
 main = do
@@ -159,4 +208,7 @@ main = do
         Right (start, end, hill) -> do
             part1 start end hill
                 & maybe "no path exists" show
+                & putStrLn
+            part2 'a' end hill
+                & maybe "no trail exists" show
                 & putStrLn

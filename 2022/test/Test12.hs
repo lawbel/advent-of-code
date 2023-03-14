@@ -22,7 +22,7 @@ tests :: TestTree
 tests = Tasty.testGroup "tests" [unitTests]
 
 unitTests :: TestTree
-unitTests = Tasty.testGroup "unit tests" [part1Tests]
+unitTests = Tasty.testGroup "unit tests" [part1Tests, part2Tests]
 
 exampleMatrix :: Matrix Char
 exampleMatrix = Matrix.fromLists
@@ -51,3 +51,12 @@ part1Tests = Tasty.testGroup "part 1 tests"
         \accszExk\n\
         \acctuvwj\n\
         \abdefghi\n"
+
+part2Tests :: TestTree
+part2Tests = Tasty.testGroup "part 2 tests"
+    [ HUnit.testCase "shortest trail 'a' to end" $
+        pathLength 'a' (V2 6 3) @?= Just 29 ]
+  where
+    pathLength c v =
+        Day12.shortestTrail c v exampleMatrix
+            <&> \path -> length path - 1
