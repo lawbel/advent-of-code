@@ -55,6 +55,7 @@ parseMove = do
 parseMoves :: Parser (Vector Move)
 parseMoves = Vec.fromList <$> Parse.sepEndBy parseMove Parse.Char.eol
 
+
 dirToVec :: Direction -> V2 Int
 dirToVec = \case
     RightDir -> V2 1 0
@@ -85,12 +86,19 @@ applyDir dir = do
 
                 -- diagonal
                 V2   2    1  -> two += V2   1    1
-                V2   2  (-1) -> two += V2   1  (-1)
-                V2 (-2)   1  -> two += V2 (-1)   1
-                V2 (-2) (-1) -> two += V2 (-1) (-1)
+                V2   2    2  -> two += V2   1    1
                 V2   1    2  -> two += V2   1    1
-                V2 (-1)   2  -> two += V2 (-1)   1
+
+                V2   2  (-1) -> two += V2   1  (-1)
+                V2   2  (-2) -> two += V2   1  (-1)
                 V2   1  (-2) -> two += V2   1  (-1)
+
+                V2 (-2)   1  -> two += V2 (-1)   1
+                V2 (-2)   2  -> two += V2 (-1)   1
+                V2 (-1)   2  -> two += V2 (-1)   1
+
+                V2 (-2) (-1) -> two += V2 (-1) (-1)
+                V2 (-2) (-2) -> two += V2 (-1) (-1)
                 V2 (-1) (-2) -> two += V2 (-1) (-1)
 
                 -- within 1 tile
@@ -99,6 +107,7 @@ applyDir dir = do
     preuse (#bodyPos % _last) >>= \case
         Nothing  -> pure ()
         Just new -> #tailGhost %= Set.insert new
+
 
 applyMove :: Move -> State Knot ()
 applyMove MkMove{..} = replicateM_ distance (applyDir direction)
@@ -114,11 +123,12 @@ runMoves n = applyMoves >>> flip execState initState
         , bodyPos = Vec.replicate n $ V2 0 0
         , tailGhost = Set.singleton $ V2 0 0 }
 
+
 part1 :: Vector Move -> Int
 part1 = runMoves 1 >>> tailGhost >>> Set.size
 
 part2 :: Vector Move -> Int
-part2 = runMoves 10 >>> tailGhost >>> Set.size
+part2 = runMoves 9 >>> tailGhost >>> Set.size
 
 main :: IO ()
 main = do
