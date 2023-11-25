@@ -1,0 +1,222 @@
+cabal-version: 3.0
+
+name: adventofcode2017
+version: 0.1.0.0
+author: rvLMdE7
+build-type: Simple
+license: BSD-3-Clause
+
+license-file: LICENSE
+extra-source-files: README.md
+data-files: input/*.txt
+
+
+common common-ghc-lib-options
+    ghc-options:
+        -Wall
+        -Wincomplete-record-updates
+        -Wincomplete-uni-patterns
+        -Wpartial-fields
+        -Wredundant-constraints
+        -fhide-source-paths
+
+common common-lang-options
+    default-language: Haskell2010
+    default-extensions:
+        , BinaryLiterals
+        , ImportQualifiedPost
+        , LambdaCase
+        , NumericUnderscores
+        , TypeApplications
+        , QuasiQuotes
+
+common common-lib-options
+    import:
+        , common-lang-options
+        , common-ghc-lib-options
+    build-depends:
+        , base ^>=4.15
+        , bytestring ^>=0.10
+        , flow ^>=2.0
+        , containers ^>=0.6.4
+        , text ^>=1.2
+        , hashtables ^>=1.2.4
+        , megaparsec ^>=9.2
+        , vector-instances ^>=3.4
+        , pretty-simple ^>=4.0
+        , unordered-containers ^>=0.2.17
+        , hashable ^>=1.3.5
+        , vector ^>=0.12
+        , filepath ^>=1.4.2
+        , linear ^>=1.21.8
+        , lens ^>=5.0
+        , interpolatedstring-perl6 ^>=1.0.2
+
+common common-runtime-options
+    import:
+        , common-lang-options
+        , common-ghc-lib-options
+    hs-source-dirs: run
+    build-depends: base
+    ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N
+
+
+library
+    import: common-lib-options
+    hs-source-dirs:
+        , src/main
+        , src/help
+    other-modules: Paths_adventofcode2017
+    exposed-modules:
+        , Common
+        , Common.Vector
+        , Day01
+        , Day02
+        , Day03
+        , Day04
+        , Day05
+        , Day06
+        , Day08
+        , Day09
+        , Day12
+        , Day15
+
+common common-exe-options
+    import: common-runtime-options
+    build-depends: adventofcode2017
+
+executable day-01
+    import: common-exe-options
+    mixins: adventofcode2017 (Day01 as Day)
+    main-is: Run.hs
+
+executable day-02
+    import: common-exe-options
+    mixins: adventofcode2017 (Day02 as Day)
+    main-is: Run.hs
+
+executable day-03
+    import: common-exe-options
+    mixins: adventofcode2017 (Day03 as Day)
+    main-is: Run.hs
+
+executable day-04
+    import: common-exe-options
+    mixins: adventofcode2017 (Day04 as Day)
+    main-is: Run.hs
+
+executable day-05
+    import: common-exe-options
+    mixins: adventofcode2017 (Day05 as Day)
+    main-is: Run.hs
+
+executable day-06
+    import: common-exe-options
+    mixins: adventofcode2017 (Day06 as Day)
+    main-is: Run.hs
+
+executable day-08
+    import: common-exe-options
+    mixins: adventofcode2017 (Day08 as Day)
+    main-is: Run.hs
+
+executable day-09
+    import: common-exe-options
+    mixins: adventofcode2017 (Day09 as Day)
+    main-is: Run.hs
+
+executable day-12
+    import: common-exe-options
+    mixins: adventofcode2017 (Day12 as Day)
+    main-is: Run.hs
+
+executable day-15
+    import: common-exe-options
+    mixins: adventofcode2017 (Day15 as Day)
+    main-is: Run.hs
+
+
+library adventofcode2017-tests
+    import: common-lib-options
+    hs-source-dirs: spec
+    build-depends:
+        , adventofcode2017
+        , tasty ^>=1.4.2
+        , tasty-hunit ^>=0.10.0.3
+        , tasty-hedgehog ^>=1.1.0
+        , hedgehog ^>=1.0.5
+    exposed-modules:
+        , Test01
+        , Test02
+        , Test03
+        , Test04
+        , Test05
+        , Test06
+        , Test08
+        , Test09
+        , Test12
+        , Test15
+
+common common-test-options
+    import: common-runtime-options
+    build-depends: adventofcode2017-tests
+
+test-suite test-01
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test01 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-02
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test02 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-03
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test03 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-04
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test04 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-05
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test05 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-06
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test06 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-08
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test08 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-09
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test09 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-12
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test12 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-15
+    import: common-test-options
+    mixins: adventofcode2017-tests (Test15 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
