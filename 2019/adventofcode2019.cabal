@@ -1,0 +1,120 @@
+cabal-version: 2.2
+
+name: adventofcode2019
+version: 0.1.0.0
+author: rvLMdE7
+build-type: Simple
+
+source-repository head
+  type: git
+  location: https://github.com/rvLMdE7/advent-of-code-2019
+
+common common-lang-options
+  default-language: Haskell2010
+  default-extensions:
+      ImportQualifiedPost
+    , NumericUnderscores
+
+common common-lib-options
+  import: common-lang-options
+  build-depends:
+      base ^>=4.14
+    , bytestring
+    , containers
+    , flow
+    , mtl
+    , optics
+    , text
+    , th-printf
+    , vector
+    , pretty-simple
+  ghc-options: -Wall
+
+common common-exe-options
+  import: common-lang-options
+  build-depends:
+      base
+    , adventofcode2019
+  hs-source-dirs: run
+
+library
+  import: common-lib-options
+  hs-source-dirs:
+      day-01
+    , day-02
+    , day-03
+    , day-04
+    , day-05
+    , day-06
+    , day-07
+    , day-08
+    , day-09
+    , day-10
+    , day-11
+  exposed-modules:
+      Day01
+    , Day02
+    , Day03
+    , Day04
+    , Day05
+    , Day06
+    , Day07
+    , Day08
+    , Day09
+    , Day10
+    , Day11
+
+executable day01
+  import: common-exe-options
+  mixins: adventofcode2019 (Day01 as Day)
+  main-is: Main.hs
+
+executable day02
+  import: common-exe-options
+  mixins: adventofcode2019 (Day02 as Day)
+  main-is: Main.hs
+
+executable day03
+  import: common-exe-options
+  mixins: adventofcode2019 (Day03 as Day)
+  main-is: Main.hs
+
+executable day04
+  import: common-exe-options
+  mixins: adventofcode2019 (Day04 as Day)
+  main-is: Main.hs
+
+executable day05
+  import: common-exe-options
+  mixins: adventofcode2019 (Day05 as Day)
+  main-is: Main.hs
+
+executable day06
+  import: common-exe-options
+  mixins: adventofcode2019 (Day06 as Day)
+  main-is: Main.hs
+
+executable day07
+  import: common-exe-options
+  mixins: adventofcode2019 (Day07 as Day)
+  main-is: Main.hs
+
+executable day08
+  import: common-exe-options
+  mixins: adventofcode2019 (Day08 as Day)
+  main-is: Main.hs
+
+executable day09
+  import: common-exe-options
+  mixins: adventofcode2019 (Day09 as Day)
+  main-is: Main.hs
+
+executable day10
+  import: common-exe-options
+  mixins: adventofcode2019 (Day10 as Day)
+  main-is: Main.hs
+
+executable day11
+  import: common-exe-options
+  mixins: adventofcode2019 (Day11 as Day)
+  main-is: Main.hs
