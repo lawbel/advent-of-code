@@ -1,0 +1,380 @@
+cabal-version: 3.0
+
+name: adventofcode2021
+version: 0.1.0.0
+author: rvLMdE7
+build-type: Simple
+license: BSD-3-Clause
+
+license-file: LICENSE
+extra-source-files: README.md
+data-files: input/*.txt
+
+
+common common-ghc-lib-options
+    ghc-options:
+        -Wall
+        -Wincomplete-record-updates
+        -Wincomplete-uni-patterns
+        -Wpartial-fields
+        -Wredundant-constraints
+        -fhide-source-paths
+
+common common-ghc-exe-options
+    import: common-ghc-lib-options
+    ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N
+
+common common-lang-options
+    default-language: Haskell2010
+    default-extensions:
+        , BinaryLiterals
+        , ImportQualifiedPost
+        , LambdaCase
+        , NumericUnderscores
+        , TypeApplications
+
+
+common common-runtime-options
+    import:
+        , common-lang-options
+        , common-ghc-exe-options
+    hs-source-dirs: run
+    build-depends: base
+
+common common-exe-options
+    import: common-runtime-options
+    build-depends: adventofcode2021
+
+common common-test-options
+    import: common-runtime-options
+    build-depends: adventofcode2021-tests
+
+common common-lib-options
+    import:
+        , common-lang-options
+        , common-ghc-lib-options
+    build-depends:
+        , base ^>=4.14
+        , bytestring
+        , containers
+        , flow
+        , ghc-typelits-knownnat
+        , ghc-typelits-natnormalise
+        , hashable
+        , interpolatedstring-perl6
+        , linear
+        , megaparsec
+        , mtl
+        , nonempty-containers
+        , optics
+        , parser-combinators
+        , polysemy
+        , polysemy-plugin
+        , pqueue
+        , pretty-simple
+        , semigroupoids
+        , template-haskell
+        , text
+        , th-lift-instances
+        , unordered-containers
+        , vector
+        , vector-algorithms
+
+
+library
+    import: common-lib-options
+    hs-source-dirs:
+        , src/main
+        , src/help
+    other-modules: Paths_adventofcode2021
+    exposed-modules:
+        , Common
+        , Common.Matrix
+        , Common.Optics
+        , Common.State.Poly
+        , Common.State.Trans
+        , Day01
+        , Day02
+        , Day03
+        , Day04
+        , Day05
+        , Day06
+        , Day07
+        , Day08
+        , Day09
+        , Day10
+        , Day11
+        , Day12
+        , Day13
+        , Day14
+        , Day15
+        , Day16
+        , Day17
+        , Day21
+        , Day22
+        , Day24
+        , Day25
+
+library adventofcode2021-tests
+    import: common-lib-options
+    hs-source-dirs: spec
+    build-depends:
+        , adventofcode2021
+        , tasty
+        , tasty-hunit
+        , tasty-quickcheck
+    exposed-modules:
+        , Test01
+        , Test02
+        , Test03
+        , Test04
+        , Test05
+        , Test06
+        , Test07
+        , Test08
+        , Test09
+        , Test10
+        , Test11
+        , Test12
+        , Test13
+        , Test14
+        , Test15
+        , Test16
+        , Test17
+        , Test21
+        , Test22
+        , Test24
+        , Test25
+
+
+executable day-01
+    import: common-exe-options
+    mixins: adventofcode2021 (Day01 as Day)
+    main-is: Run.hs
+
+executable day-02
+    import: common-exe-options
+    mixins: adventofcode2021 (Day02 as Day)
+    main-is: Run.hs
+
+executable day-03
+    import: common-exe-options
+    mixins: adventofcode2021 (Day03 as Day)
+    main-is: Run.hs
+
+executable day-04
+    import: common-exe-options
+    mixins: adventofcode2021 (Day04 as Day)
+    main-is: Run.hs
+
+executable day-05
+    import: common-exe-options
+    mixins: adventofcode2021 (Day05 as Day)
+    main-is: Run.hs
+
+executable day-06
+    import: common-exe-options
+    mixins: adventofcode2021 (Day06 as Day)
+    main-is: Run.hs
+
+executable day-07
+    import: common-exe-options
+    mixins: adventofcode2021 (Day07 as Day)
+    main-is: Run.hs
+
+executable day-08
+    import: common-exe-options
+    mixins: adventofcode2021 (Day08 as Day)
+    main-is: Run.hs
+
+executable day-09
+    import: common-exe-options
+    mixins: adventofcode2021 (Day09 as Day)
+    main-is: Run.hs
+
+executable day-10
+    import: common-exe-options
+    mixins: adventofcode2021 (Day10 as Day)
+    main-is: Run.hs
+
+executable day-11
+    import: common-exe-options
+    mixins: adventofcode2021 (Day11 as Day)
+    main-is: Run.hs
+
+executable day-12
+    import: common-exe-options
+    mixins: adventofcode2021 (Day12 as Day)
+    main-is: Run.hs
+
+executable day-13
+    import: common-exe-options
+    mixins: adventofcode2021 (Day13 as Day)
+    main-is: Run.hs
+
+executable day-14
+    import: common-exe-options
+    mixins: adventofcode2021 (Day14 as Day)
+    main-is: Run.hs
+
+executable day-15
+    import: common-exe-options
+    mixins: adventofcode2021 (Day15 as Day)
+    main-is: Run.hs
+
+executable day-16
+    import: common-exe-options
+    mixins: adventofcode2021 (Day16 as Day)
+    main-is: Run.hs
+
+executable day-17
+    import: common-exe-options
+    mixins: adventofcode2021 (Day17 as Day)
+    main-is: Run.hs
+
+executable day-21
+    import: common-exe-options
+    mixins: adventofcode2021 (Day21 as Day)
+    main-is: Run.hs
+
+executable day-22
+    import: common-exe-options
+    mixins: adventofcode2021 (Day22 as Day)
+    main-is: Run.hs
+
+executable day-24
+    import: common-exe-options
+    mixins: adventofcode2021 (Day24 as Day)
+    main-is: Run.hs
+
+executable day-25
+    import: common-exe-options
+    mixins: adventofcode2021 (Day25 as Day)
+    main-is: Run.hs
+
+
+test-suite test-01
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test01 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-02
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test02 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-03
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test03 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-04
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test04 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-05
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test05 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-06
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test06 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-07
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test07 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-08
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test08 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-09
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test09 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-10
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test10 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-11
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test11 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-12
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test12 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-13
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test13 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-14
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test14 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-15
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test15 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-16
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test16 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-17
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test17 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-21
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test21 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-22
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test22 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-24
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test24 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-25
+    import: common-test-options
+    mixins: adventofcode2021-tests (Test25 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
