@@ -1,0 +1,227 @@
+cabal-version: 2.2
+
+name: adventofcode2020
+version: 0.1.0.0
+author: rvLMdE7
+build-type: Simple
+
+source-repository head
+  type: git
+  location: https://github.com/rvLMdE7/advent-of-code-2020
+
+common common-lang-options
+  default-language: Haskell2010
+  default-extensions:
+      BinaryLiterals
+    , ImportQualifiedPost
+    , NumericUnderscores
+
+common common-exe-options
+  import: common-lang-options
+  build-depends:
+      base
+    , adventofcode2020
+  hs-source-dirs: run
+
+library
+  import: common-lang-options
+  ghc-options: -Wall
+  build-depends:
+      base ^>=4.14
+    , algebraic-graphs
+    , bytestring
+    , containers
+    , flow
+    , hashable
+    , lens
+    , linear
+    , list-t
+    , megaparsec
+    , mtl
+    , named
+    , nonempty-containers
+    , optics
+    , parser-combinators
+    , pretty-simple
+    , stm
+    , stm-containers
+    , text
+    , th-printf
+    , vector
+  hs-source-dirs:
+      day-01
+    , day-02
+    , day-03
+    , day-04
+    , day-05
+    , day-06
+    , day-07
+    , day-08
+    , day-09
+    , day-10
+    , day-11
+    , day-12
+    , day-13
+    , day-14
+    , day-15
+    , day-16
+    , day-17
+    , day-18
+    , day-19
+    , day-20
+    , day-21
+    , day-22
+    , day-23
+    , day-24
+    , day-25
+  exposed-modules:
+      Day01
+    , Day02
+    , Day03
+    , Day04
+    , Day05
+    , Day06
+    , Day07
+    , Day08
+    , Day09
+    , Day10
+    , Day11
+    , Day12
+    , Day13
+    , Day14
+    , Day15
+    , Day16
+    , Day17
+    , Day18
+    , Day19
+    , Day20
+    , Day21
+    , Day22
+    , Day23
+    , Day24
+    , Day25
+
+executable day-01
+  import: common-exe-options
+  mixins: adventofcode2020 (Day01 as Day)
+  main-is: Main.hs
+
+executable day-02
+  import: common-exe-options
+  mixins: adventofcode2020 (Day02 as Day)
+  main-is: Main.hs
+
+executable day-03
+  import: common-exe-options
+  mixins: adventofcode2020 (Day03 as Day)
+  main-is: Main.hs
+
+executable day-04
+  import: common-exe-options
+  mixins: adventofcode2020 (Day04 as Day)
+  main-is: Main.hs
+
+executable day-05
+  import: common-exe-options
+  mixins: adventofcode2020 (Day05 as Day)
+  main-is: Main.hs
+
+executable day-06
+  import: common-exe-options
+  mixins: adventofcode2020 (Day06 as Day)
+  main-is: Main.hs
+
+executable day-07
+  import: common-exe-options
+  mixins: adventofcode2020 (Day07 as Day)
+  main-is: Main.hs
+
+executable day-08
+  import: common-exe-options
+  mixins: adventofcode2020 (Day08 as Day)
+  main-is: Main.hs
+
+executable day-09
+  import: common-exe-options
+  mixins: adventofcode2020 (Day09 as Day)
+  main-is: Main.hs
+
+executable day-10
+  import: common-exe-options
+  mixins: adventofcode2020 (Day10 as Day)
+  main-is: Main.hs
+
+executable day-11
+  import: common-exe-options
+  mixins: adventofcode2020 (Day11 as Day)
+  main-is: Main.hs
+
+executable day-12
+  import: common-exe-options
+  mixins: adventofcode2020 (Day12 as Day)
+  main-is: Main.hs
+
+executable day-13
+  import: common-exe-options
+  mixins: adventofcode2020 (Day13 as Day)
+  main-is: Main.hs
+
+executable day-14
+  import: common-exe-options
+  mixins: adventofcode2020 (Day14 as Day)
+  main-is: Main.hs
+
+executable day-15
+  import: common-exe-options
+  mixins: adventofcode2020 (Day15 as Day)
+  main-is: Main.hs
+
+executable day-16
+  import: common-exe-options
+  mixins: adventofcode2020 (Day16 as Day)
+  main-is: Main.hs
+
+executable day-17
+  import: common-exe-options
+  mixins: adventofcode2020 (Day17 as Day)
+  main-is: Main.hs
+
+executable day-18
+  import: common-exe-options
+  mixins: adventofcode2020 (Day18 as Day)
+  main-is: Main.hs
+
+executable day-19
+  import: common-exe-options
+  mixins: adventofcode2020 (Day19 as Day)
+  main-is: Main.hs
+
+executable day-20
+  import: common-exe-options
+  mixins: adventofcode2020 (Day20 as Day)
+  main-is: Main.hs
+
+executable day-21
+  import: common-exe-options
+  mixins: adventofcode2020 (Day21 as Day)
+  main-is: Main.hs
+
+executable day-22
+  import: common-exe-options
+  mixins: adventofcode2020 (Day22 as Day)
+  main-is: Main.hs
+
+executable day-23
+  import: common-exe-options
+  mixins: adventofcode2020 (Day23 as Day)
+  main-is: Main.hs
+
+executable day-24
+  import: common-exe-options
+  mixins: adventofcode2020 (Day24 as Day)
+  main-is: Main.hs
+
+executable day-25
+  import: common-exe-options
+  mixins: adventofcode2020 (Day25 as Day)
+  main-is: Main.hs
