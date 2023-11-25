@@ -1,0 +1,295 @@
+cabal-version: 3.0
+
+name: adventofcode2022
+version: 0.1.0.0
+author: rvLMdE7
+build-type: Simple
+license: BSD-3-Clause
+
+license-file: LICENSE
+extra-source-files: README.md
+data-files: input/*.txt
+
+
+common common-ghc-options
+    ghc-options:
+        -Wall
+        -Wincomplete-record-updates
+        -Wincomplete-uni-patterns
+        -Wpartial-fields
+        -Wredundant-constraints
+        -fhide-source-paths
+
+common common-lang-options
+    default-language: Haskell2010
+    default-extensions:
+        , BinaryLiterals
+        , ImportQualifiedPost
+        , LambdaCase
+        , NumericUnderscores
+        , TypeApplications
+        , QuasiQuotes
+
+common common-lib-options
+    import:
+        , common-lang-options
+        , common-ghc-options
+    build-depends:
+        , base ^>=4.15.1
+        , bytestring ^>=0.10.12
+        , text ^>=1.2.5
+        , flow ^>=2.0.0
+        , megaparsec ^>=9.2.0
+        , vector ^>=0.12.3
+        , vector-algorithms ^>=0.8.0
+        , unordered-containers ^>=0.2.17
+        , interpolatedstring-perl6 ^>=1.0.2
+        -- 'pretty-simple' is just for interactive use / debugging
+        , pretty-simple ^>=4.0.0
+        , containers ^>=0.6.4
+        , linear ^>=1.21.10
+        , transformers ^>=0.5.6
+        , mtl ^>=2.2.2
+        , optics ^>=0.4.2
+        , split ^>=0.2.3
+        , extra ^>=1.7.12
+        , matrix ^>=0.3.6
+        , pqueue ^>=1.4.3
+        , data-interval ^>=2.1.1
+        , extended-reals ^>=0.2.4
+
+common common-runtime-options
+    import:
+        , common-lang-options
+        , common-ghc-options
+    hs-source-dirs: run
+    build-depends: base
+    ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N
+
+
+library
+    import: common-lib-options
+    hs-source-dirs:
+        , src/main
+        , src/help
+    other-modules: Paths_adventofcode2022
+    exposed-modules:
+        , Common
+        , Day01
+        , Day02
+        , Day03
+        , Day04
+        , Day05
+        , Day06
+        , Day07
+        , Day08
+        , Day09
+        , Day10
+        , Day11
+        , Day12
+        , Day13
+        , Day15
+        , Day20
+
+common common-exe-options
+    import: common-runtime-options
+    build-depends: adventofcode2022
+
+executable day-01
+    import: common-exe-options
+    mixins: adventofcode2022 (Day01 as Day)
+    main-is: Run.hs
+
+executable day-02
+    import: common-exe-options
+    mixins: adventofcode2022 (Day02 as Day)
+    main-is: Run.hs
+
+executable day-03
+    import: common-exe-options
+    mixins: adventofcode2022 (Day03 as Day)
+    main-is: Run.hs
+
+executable day-04
+    import: common-exe-options
+    mixins: adventofcode2022 (Day04 as Day)
+    main-is: Run.hs
+
+executable day-05
+    import: common-exe-options
+    mixins: adventofcode2022 (Day05 as Day)
+    main-is: Run.hs
+
+executable day-06
+    import: common-exe-options
+    mixins: adventofcode2022 (Day06 as Day)
+    main-is: Run.hs
+
+executable day-07
+    import: common-exe-options
+    mixins: adventofcode2022 (Day07 as Day)
+    main-is: Run.hs
+
+executable day-08
+    import: common-exe-options
+    mixins: adventofcode2022 (Day08 as Day)
+    main-is: Run.hs
+
+executable day-09
+    import: common-exe-options
+    mixins: adventofcode2022 (Day09 as Day)
+    main-is: Run.hs
+
+executable day-10
+    import: common-exe-options
+    mixins: adventofcode2022 (Day10 as Day)
+    main-is: Run.hs
+
+executable day-11
+    import: common-exe-options
+    mixins: adventofcode2022 (Day11 as Day)
+    main-is: Run.hs
+
+executable day-12
+    import: common-exe-options
+    mixins: adventofcode2022 (Day12 as Day)
+    main-is: Run.hs
+
+executable day-13
+    import: common-exe-options
+    mixins: adventofcode2022 (Day13 as Day)
+    main-is: Run.hs
+
+executable day-15
+    import: common-exe-options
+    mixins: adventofcode2022 (Day15 as Day)
+    main-is: Run.hs
+
+executable day-20
+    import: common-exe-options
+    mixins: adventofcode2022 (Day20 as Day)
+    main-is: Run.hs
+
+
+library adventofcode2022-tests
+    import: common-lib-options
+    hs-source-dirs: test
+    build-depends:
+        , adventofcode2022
+        , tasty ^>=1.4.2
+        , tasty-hunit ^>=0.10.0
+        , tasty-quickcheck ^>=0.10.2
+        , tasty-hedgehog ^>=1.4.0
+        , hedgehog ^>=1.2
+        , QuickCheck ^>=2.14.2
+        , quickcheck-classes ^>=0.6.5
+    exposed-modules:
+        , Test01
+        , Test02
+        , Test03
+        , Test04
+        , Test05
+        , Test06
+        , Test07
+        , Test08
+        , Test09
+        , Test10
+        , Test11
+        , Test12
+        , Test13
+        , Test15
+        , Test20
+
+common common-test-options
+    import: common-runtime-options
+    build-depends: adventofcode2022-tests
+
+test-suite test-01
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test01 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-02
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test02 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-03
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test03 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-04
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test04 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-05
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test05 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-06
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test06 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-07
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test07 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-08
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test08 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-09
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test09 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-10
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test10 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-11
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test11 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-12
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test12 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-13
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test13 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-15
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test15 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
+
+test-suite test-20
+    import: common-test-options
+    mixins: adventofcode2022-tests (Test20 as Test)
+    main-is: Spec.hs
+    type: exitcode-stdio-1.0
