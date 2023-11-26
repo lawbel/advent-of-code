@@ -18,8 +18,11 @@
       perSystem = { pkgs, config, ... }:
         let
           crateOutputs = config.nci.outputs."advent-of-code-2023";
+          devPkgs = [ pkgs.rust-analyzer ];
         in {
-          devShells.default = crateOutputs.devShell;
+          devShells.default = crateOutputs.devShell.overrideAttrs (old: {
+            packages = (old.packages or []) ++ devPkgs;
+          });
           packages.default = crateOutputs.packages.release;
         };
     };

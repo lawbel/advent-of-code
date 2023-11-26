@@ -1,5 +1,8 @@
 # direnv
-.direnv
+.direnv/
 
 # rust
-target
+target/
+
+# nix
+result

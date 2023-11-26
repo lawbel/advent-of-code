@@ -1,4 +1,6 @@
-{...}: {
+{ ... }:
+
+{
   perSystem = { pkgs, config, ... }:
     let
       crateName = "advent-of-code-2023";
