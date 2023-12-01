@@ -5,6 +5,6 @@ edition = "2021"
 authors = ["Lawrence Bell"]
 
 [[bin]]
-name = "day-01"
+name = "day_01"
 
 [dependencies]
