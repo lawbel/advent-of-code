@@ -7,4 +7,8 @@ authors = ["Lawrence Bell"]
 [[bin]]
 name = "day_01"
 
+[[bin]]
+name = "day_02"
+
 [dependencies]
+nom = "7.1.3"
