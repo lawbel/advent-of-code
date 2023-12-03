@@ -27,6 +27,45 @@ impl Game {
         }
         return true;
     }
+
+    fn minimal(&self) -> Observation {
+        let mut result = Observation {
+            green: None,
+            red: None,
+            blue: None,
+        };
+
+        for obs in &self.observations {
+            obs.red.map(|n| {
+                result.red = Some(match result.red {
+                    None => n,
+                    Some(m) => u32::max(n, m),
+                })
+            });
+            obs.blue.map(|n|
+                result.blue = Some(match result.blue {
+                    None => n,
+                    Some(m) => u32::max(n, m),
+                })
+            );
+            obs.green.map(|n| {
+                result.green = Some(match result.green {
+                    None => n,
+                    Some(m) => u32::max(n, m),
+                })
+            });
+        }
+
+        result
+    }
+}
+
+impl Observation {
+    fn power(&self) -> u32 {
+        self.green.unwrap_or(0)
+            * self.blue.unwrap_or(0)
+            * self.red.unwrap_or(0)
+    }
 }
 
 /// Parses a sequence of games, separated by newlines (or other whitespace).
@@ -124,7 +163,7 @@ fn parse_colour(input: &str) -> nom::IResult<&str, &str> {
     ))(input)
 }
 
-fn part_1(games: Vec<Game>) -> u32 {
+fn part_1(games: &Vec<Game>) -> u32 {
     games
         .into_iter()
         .filter(|game| game.is_possible())
@@ -132,8 +171,13 @@ fn part_1(games: Vec<Game>) -> u32 {
         .sum()
 }
 
+fn part_2(games: &Vec<Game>) -> u32 {
+    games.into_iter().map(|game| game.minimal().power()).sum()
+}
+
 fn main() {
     let input = include_str!("../../inputs/day_02.txt");
     let games = parse_games(input).expect("couldn't parse input games").1;
-    println!("{:?}", part_1(games));
+    println!("{}", part_1(&games));
+    println!("{}", part_2(&games));
 }
