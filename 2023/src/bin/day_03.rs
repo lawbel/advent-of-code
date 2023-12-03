@@ -150,6 +150,20 @@ fn gear_ratios(
         for i_2 in 0..i_1 {
             let pos_1 = pairs[i_1];
             let pos_2 = pairs[i_2];
+            let end_1 = pos_1.start.0 + pos_1.length;
+            let end_2 = pos_2.start.0 + pos_2.length;
+
+            let y_diff = usize::abs_diff(pos_1.start.1, pos_2.start.1);
+            let x_diff_left = usize::saturating_sub(pos_2.start.0, end_1);
+            let x_diff_right = usize::saturating_sub(pos_1.start.0, end_2);
+
+            // If the y-coordinates or x-coordinates are more than 2 apart,
+            // then they can't possibly share a gear in-between them. So we
+            // can skip the rest of the loop and save doing that computation.
+            // This turns out to save a *lot* of work.
+            if (y_diff > 2) || (x_diff_left > 2) || (x_diff_right > 2) {
+                continue;
+            }
 
             let &value_1 = positions.get(pos_1).unwrap();
             let &value_2 = positions.get(pos_2).unwrap();
