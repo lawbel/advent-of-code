@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::hash::Hash;
 
 type Grid<T> = Vec<Vec<T>>;
 type Pair = (usize, usize);
@@ -66,7 +67,7 @@ fn find_numbers_in_grid(grid: &Grid<char>) -> HashMap<Pos<Pair>, u32> {
 fn neighbours_of(
     grid: &Grid<char>,
     Pos { start, length }: &Pos<Pair>,
-) -> Vec<char> {
+) -> HashMap<Pair, char> {
     let x_start = usize::saturating_sub(start.0, 1);
     let x_end = start.0 + length;
     let y_start = usize::saturating_sub(start.1, 1);
@@ -74,7 +75,7 @@ fn neighbours_of(
     let width = grid[0].len();
     let height = grid.len();
 
-    let mut result = Vec::new();
+    let mut result = HashMap::new();
 
     for y in y_start..=y_end {
         for x in x_start..=x_end {
@@ -83,7 +84,7 @@ fn neighbours_of(
             let y_in_pos = y == start.1;
 
             if in_bounds && !(x_in_pos && y_in_pos) {
-                result.push(grid[y][x]);
+                result.insert((x, y), grid[y][x]);
             }
         }
     }
@@ -95,6 +96,10 @@ fn is_symbol(chr: &char) -> bool {
     !(chr.is_digit(10) || *chr == '.')
 }
 
+fn is_gear(chr: &char) -> bool {
+    *chr == '*'
+}
+
 fn part_numbers(
     grid: &Grid<char>,
     positions: &HashMap<Pos<Pair>, u32>,
@@ -102,7 +107,7 @@ fn part_numbers(
     let mut parts = Vec::new();
 
     for (pos, &value) in positions {
-        if neighbours_of(grid, pos).iter().any(is_symbol) {
+        if neighbours_of(grid, pos).values().any(is_symbol) {
             parts.push(value);
         }
     }
@@ -110,8 +115,67 @@ fn part_numbers(
     parts
 }
 
+/// Intersects the two [`HashMap`]s with each other, returning the result as
+/// a new map. If a key is common to both maps, then we simply use the value
+/// from the first map.
+fn intersect<'a, K, V>(
+    hash_1: &HashMap<K, V>,
+    hash_2: &HashMap<K, V>,
+) -> HashMap<K, V>
+where
+    K: Eq + Hash + Copy,
+    V: Copy,
+{
+    let mut new = HashMap::new();
+
+    for (&key, &value) in hash_1.iter() {
+        if hash_2.contains_key(&key) {
+            new.insert(key, value);
+        }
+    }
+
+    new
+}
+
+fn gear_ratios(
+    grid: &Grid<char>,
+    positions: &HashMap<Pos<Pair>, u32>,
+) -> HashMap<Pair, u32> {
+    let mut gears = HashMap::new();
+
+    let pairs: Vec<_> = positions.keys().collect();
+    let len = pairs.len();
+
+    for i_1 in 0..len {
+        for i_2 in 0..i_1 {
+            let pos_1 = pairs[i_1];
+            let pos_2 = pairs[i_2];
+
+            let &value_1 = positions.get(pos_1).unwrap();
+            let &value_2 = positions.get(pos_2).unwrap();
+
+            let nbrs_1 = neighbours_of(grid, pairs[i_1]);
+            let nbrs_2 = neighbours_of(grid, pairs[i_2]);
+            let shared_nbrs = intersect(&nbrs_1, &nbrs_2);
+
+            for (pos, value) in shared_nbrs {
+                if is_gear(&value) {
+                    let ratio = value_1 * value_2;
+                    gears.insert(pos, ratio);
+                }
+            }
+        }
+    }
+
+    gears
+}
+
 fn part_1(grid: &Grid<char>, positions: &HashMap<Pos<Pair>, u32>) -> u32 {
     part_numbers(grid, positions).into_iter().sum()
+}
+
+fn part_2(grid: &Grid<char>, positions: &HashMap<Pos<Pair>, u32>) -> u32 {
+    gear_ratios(grid, positions).values().sum()
 }
 
 fn main() {
@@ -121,4 +185,5 @@ fn main() {
     let positions = find_numbers_in_grid(&grid);
 
     println!("{}", part_1(&grid, &positions));
+    println!("{}", part_2(&grid, &positions));
 }
