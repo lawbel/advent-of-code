@@ -16,5 +16,8 @@ name = "day_03"
 [[bin]]
 name = "day_04"
 
+[[bin]]
+name = "day_05"
+
 [dependencies]
 nom = "7.1.3"
