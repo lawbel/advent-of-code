@@ -5,6 +5,8 @@ edition = "2021"
 authors = ["Lawrence Bell"]
 
 [dependencies]
+gcollections = "1.5.0"
+intervallum = "1.4.0"
 nom = "7.1.3"
 
 [[bin]]
