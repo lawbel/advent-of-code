@@ -7,6 +7,7 @@ authors = ["Lawrence Bell"]
 [dependencies]
 gcollections = "1.5.0"
 intervallum = "1.4.0"
+itertools = "0.12.0"
 nom = "7.1.3"
 
 [[bin]]
@@ -26,3 +27,6 @@ name = "day_05"
 
 [[bin]]
 name = "day_06"
+
+[[bin]]
+name = "day_07"
