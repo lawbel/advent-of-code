@@ -19,9 +19,12 @@ enum Card {
     Ace,
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+struct WildCard(Card);
+
 #[derive(Debug, PartialEq, Eq, Hash)]
-struct Hand {
-    cards: [Card; 5],
+struct Hand<C = Card> {
+    cards: [C; 5],
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
@@ -35,7 +38,24 @@ enum HandType {
     FiveOfAKind,
 }
 
-impl Hand {
+impl Ord for WildCard {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self.0, other.0) {
+            (Card::Jack, Card::Jack) => Ordering::Equal,
+            (Card::Jack, _) => Ordering::Less,
+            (_, Card::Jack) => Ordering::Greater,
+            _ => Card::cmp(&self.0, &other.0),
+        }
+    }
+}
+
+impl PartialOrd for WildCard {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Hand<Card> {
     fn hand_type(&self) -> HandType {
         let groups = iter::counts(self.cards.iter());
         let counts: Vec<_> = groups.values().sorted().collect();
@@ -50,6 +70,59 @@ impl Hand {
             _ => panic!("unreachable"),
         }
     }
+
+    fn promote(&self) -> Hand<WildCard> {
+        Hand {
+            cards: self.cards.map(WildCard),
+        }
+    }
+}
+
+impl Hand<WildCard> {
+    fn hand_type(&self) -> HandType {
+        let hand_type = self.demote().hand_type();
+        let jokers = self
+            .cards
+            .iter()
+            .filter(|card| card.0 == Card::Jack)
+            .count();
+
+        // Thinking carefully about what is the best possible way that a hand
+        // can be promoted using the available numbers of jokers, and (given
+        // the number of jokers) what we can infer about the hand, yields this
+        // decision tree.
+        match jokers {
+            5 => HandType::FiveOfAKind,
+            4 => HandType::FiveOfAKind,
+            3 => match hand_type {
+                HandType::ThreeOfAKind => HandType::FourOfAKind,
+                HandType::FullHouse => HandType::FiveOfAKind,
+                _ => panic!("unreachable"),
+            },
+            2 => match hand_type {
+                HandType::OnePair => HandType::ThreeOfAKind,
+                HandType::TwoPair => HandType::FourOfAKind,
+                HandType::FullHouse => HandType::FiveOfAKind,
+                _ => panic!("unreachable"),
+            },
+            1 => match hand_type {
+                HandType::HighCard => HandType::OnePair,
+                HandType::OnePair => HandType::ThreeOfAKind,
+                HandType::TwoPair => HandType::FullHouse,
+                HandType::ThreeOfAKind => HandType::FourOfAKind,
+                HandType::FourOfAKind => HandType::FiveOfAKind,
+                _ => panic!("unreachable"),
+            },
+            0 => hand_type,
+            _ => panic!("unreachable"),
+        }
+    }
+
+    fn demote(&self) -> Hand<Card> {
+        Hand {
+            cards: self.cards.map(|card| card.0),
+        }
+    }
 }
 
 impl Ord for Hand {
@@ -62,6 +135,21 @@ impl Ord for Hand {
 }
 
 impl PartialOrd for Hand {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Hand<WildCard> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.hand_type().cmp(&other.hand_type()) {
+            Ordering::Equal => self.cards.cmp(&other.cards),
+            not_eq => not_eq,
+        }
+    }
+}
+
+impl PartialOrd for Hand<WildCard> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
@@ -113,9 +201,20 @@ fn part_1(hands_bids: &Vec<(Hand, i32)>) -> i32 {
         .sum()
 }
 
+fn part_2(hands_bids: &Vec<(Hand, i32)>) -> i32 {
+    hands_bids
+        .iter()
+        .map(|(hand, bid)| (hand.promote(), bid))
+        .sorted()
+        .enumerate()
+        .map(|(rank, (_, bid))| bid * (rank as i32 + 1))
+        .sum()
+}
+
 fn main() {
     let input = include_str!("../../inputs/day_07.txt");
     let hands_bids = parse_hands_bids(&input).expect("can parse input").1;
 
     println!("{}", part_1(&hands_bids));
+    println!("{}", part_2(&hands_bids));
 }
