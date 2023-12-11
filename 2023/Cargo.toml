@@ -9,6 +9,8 @@ gcollections = "1.5.0"
 intervallum = "1.4.0"
 itertools = "0.12.0"
 nom = "7.1.3"
+strum = "0.25.0"
+strum_macros = "0.25.3"
 
 [[bin]]
 name = "day_01"
@@ -36,3 +38,6 @@ name = "day_08"
 
 [[bin]]
 name = "day_09"
+
+[[bin]]
+name = "day_10"
