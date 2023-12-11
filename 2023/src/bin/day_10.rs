@@ -3,6 +3,7 @@
 //! right and positive-y goes down.
 
 use nom::character::complete as nom_char;
+use std::collections::HashSet;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
@@ -142,6 +143,7 @@ fn grid_at<T>(pos: Pos, grid: &Grid<T>) -> Option<&T> {
 
 fn walk_from(start: Pos, grid: &Grid<Obj>) -> Vec<Pos> {
     let mut positions = Vec::new();
+    let mut seen = HashSet::new();
     let mut pos = start;
     let mut dir;
 
@@ -151,6 +153,7 @@ fn walk_from(start: Pos, grid: &Grid<Obj>) -> Vec<Pos> {
             tmp = Some(init.1);
             pos = init.0;
             positions.push(init.0);
+            seen.insert(init.0);
             break;
         }
     }
@@ -161,12 +164,13 @@ fn walk_from(start: Pos, grid: &Grid<Obj>) -> Vec<Pos> {
     };
 
     while let Some(next) = next_pipe_in(dir, pos, grid) {
-        if positions.contains(&next.0) {
+        if seen.contains(&next.0) {
             break;
         }
         dir = next.1;
         pos = next.0;
         positions.push(next.0);
+        seen.insert(next.0);
     }
 
     positions
