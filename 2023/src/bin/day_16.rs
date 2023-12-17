@@ -133,15 +133,13 @@ impl Contraption {
         }
     }
 
-    fn send_beam_top_left_rightwards(&mut self) {
-        let dir = match self.objects.get(&(0, 0)) {
-            Some(Obj::MirrorUpRight) => Dir::Up,
-            Some(Obj::MirrorDownRight) => Dir::Down,
-            Some(Obj::SplitUpDown) => Dir::Down,
-            _ => Dir::Right,
+    fn send_beam_starting(&mut self, facing: Dir, start: &Pos) {
+        let dir = match self.objects.get(start) {
+            Some(obj) => obj.continue_from(&facing),
+            _ => facing,
         };
 
-        self.send_beam(dir, &(0, 0));
+        self.send_beam(dir, start);
     }
 }
 
@@ -150,12 +148,35 @@ fn main() {
     let contraption = parse_contraption(&input).expect("can parse input").1;
 
     println!("{}", part_1(&contraption));
+    println!("{}", part_2(&contraption));
 }
 
 fn part_1(contraption: &Contraption) -> usize {
     let mut cont = contraption.clone();
-    cont.send_beam_top_left_rightwards();
+    cont.send_beam_starting(Dir::Right, &(0, 0));
     cont.energized.len()
+}
+
+fn part_2(contraption: &Contraption) -> usize {
+    let mut max_energy = 0;
+
+    for (dir, y) in vec![(Dir::Down, 0), (Dir::Up, contraption.height - 1)] {
+        for x in 0..contraption.width {
+            let mut cont = contraption.clone();
+            cont.send_beam_starting(dir, &(x, y));
+            max_energy = usize::max(cont.energized.len(), max_energy);
+        }
+    }
+
+    for (dir, x) in vec![(Dir::Right, 0), (Dir::Left, contraption.width - 1)] {
+        for y in 0..contraption.height {
+            let mut cont = contraption.clone();
+            cont.send_beam_starting(dir, &(x, y));
+            max_energy = usize::max(cont.energized.len(), max_energy);
+        }
+    }
+
+    max_energy
 }
 
 fn parse_object(input: &str) -> Parser<Obj> {
