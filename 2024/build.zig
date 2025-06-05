@@ -4,30 +4,57 @@ const std = @import("std");
 
 /// Populate builder `b` with the build graph.
 pub fn build(b: *std.Build) void {
+    // Accept standard options.
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Provide `zig build day-01` option.
-    const run_step = b.step("day-01", "Solve day 1");
-    const exe = b.addExecutable(.{
-        .name = "day-01",
-        .root_source_file = b.path("src/day_01.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    b.installArtifact(exe);
-    const run_cmd = b.addRunArtifact(exe);
-    run_cmd.step.dependOn(b.getInstallStep());
-    run_cmd.addFileArg(b.path("txt/day_01.txt"));
-    run_step.dependOn(&run_cmd.step);
+    // For each day in `days`, we hook up a standalone executable and test
+    // suite. We handle the executables and the test suites in separate
+    // for-loops to influence the order they get printed when running
+    // `zig build --help`. The end result is much more readable than
+    // alternating in one big loop.
+    const days: [2]u8 = .{ 1, 2 };
 
-    // Provide `zig build test-01` option.
-    const test_step = b.step("test-01", "Test day 1");
-    const exe_unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/day_01.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
-    test_step.dependOn(&run_exe_unit_tests.step);
+    // Provide executables for each day.
+    inline for (days) |n| {
+        // Strings for main executable.
+        const name = std.fmt.comptimePrint("day-{d:0>2}", .{n});
+        const desc = std.fmt.comptimePrint("Solve day {d}", .{n});
+        const src = std.fmt.comptimePrint("src/day_{d:0>2}.zig", .{n});
+        const txt = std.fmt.comptimePrint("txt/day_{d:0>2}.txt", .{n});
+
+        // Provide `zig build day-{n}` option.
+        const exe_n = b.addExecutable(.{
+            .name = name,
+            .root_source_file = b.path(src),
+            .target = target,
+            .optimize = optimize,
+        });
+        b.installArtifact(exe_n);
+
+        const run_cmd_n = b.addRunArtifact(exe_n);
+        run_cmd_n.step.dependOn(b.getInstallStep());
+        run_cmd_n.addFileArg(b.path(txt));
+
+        const run_step_n = b.step(name, desc);
+        run_step_n.dependOn(&run_cmd_n.step);
+    }
+
+    // Provide test suites for each day.
+    inline for (days) |n| {
+        // Strings for test suite.
+        const name = std.fmt.comptimePrint("test-{d:0>2}", .{n});
+        const desc = std.fmt.comptimePrint("Test day {d}", .{n});
+        const src = std.fmt.comptimePrint("src/day_{d:0>2}.zig", .{n});
+
+        // Provide `zig build test-{n}` option.
+        const exe_tests_n = b.addTest(.{
+            .root_source_file = b.path(src),
+            .target = target,
+            .optimize = optimize,
+        });
+        const run_exe_tests_n = b.addRunArtifact(exe_tests_n);
+        const test_step_n = b.step(name, desc);
+        test_step_n.dependOn(&run_exe_tests_n.step);
+    }
 }
