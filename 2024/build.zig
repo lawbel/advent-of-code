@@ -22,6 +22,8 @@ pub fn build(b: *std.Build) void {
         const desc = std.fmt.comptimePrint("Solve day {d}", .{n});
         const src = std.fmt.comptimePrint("src/day_{d:0>2}.zig", .{n});
         const txt = std.fmt.comptimePrint("txt/day_{d:0>2}.txt", .{n});
+        const env = std.fmt.comptimePrint("ZIG_AOC_DAY_{d:0>2}", .{n});
+        const path = b.pathJoin(&.{ b.build_root.path.?, txt });
 
         // Provide `zig build day-{n}` option.
         const exe_n = b.addExecutable(.{
@@ -34,7 +36,7 @@ pub fn build(b: *std.Build) void {
 
         const run_cmd_n = b.addRunArtifact(exe_n);
         run_cmd_n.step.dependOn(b.getInstallStep());
-        run_cmd_n.addFileArg(b.path(txt));
+        run_cmd_n.setEnvironmentVariable(env, path);
 
         const run_step_n = b.step(name, desc);
         run_step_n.dependOn(&run_cmd_n.step);

@@ -2,26 +2,25 @@
 //! multiple files.
 const std = @import("std");
 
-/// Returns the contents of the input file for each day. The path to said file
-/// is expected to be communicated over `argv`. Caller owns returned memory.
+/// Returns the contents of the input file for the given day. Caller owns
+/// returned memory.
 ///
-/// The argument passing over `argv` is handled automatically by `build.zig`
-/// when running e.g. `zig build day-01`. If you are manually calling the
-/// compiled binary directly, pass it the absolute path to the text file over
-/// the command line - something like
-/// `./zig-out/bin/day-01 $(realpath ./txt/day_01.txt)` will do.
+/// The path to these input file is expected to be communicated over
+/// environment variables like `ZIG_AOC_DAY_01`, `ZIG_AOC_DAY_02`, etc.
+/// This argument passing is handled automatically by `build.zig` when
+/// running e.g. `zig build day-01`. If you are manually calling the compiled
+/// binary directly, pass it the absolute path to the text file
+/// yourself - something like the below would do.
+///
+///     ZIG_AOC_DAY_01=$(realpath ./txt/day_01.txt) ./zig-out/bin/day-01
 ///
 /// Note: this function has a set upper limit on the maximum file size it will
-/// attempt to read as a safety measure, but it should be enough for our needs.
-pub fn getInputFile(alloc: std.mem.Allocator) ![]u8 {
-    var args = try std.process.argsWithAllocator(alloc);
-    defer args.deinit();
+/// attempt to read, which acts as a safety measure. It should be more than
+/// sufficient for our purposes.
+pub fn getInputFile(alloc: std.mem.Allocator, comptime day: u8) ![]u8 {
+    const env = std.fmt.comptimePrint("ZIG_AOC_DAY_{d:0>2}", .{day});
+    const file = std.posix.getenv(env) orelse return error.MissingEnvVar;
 
-    // Skip first argument (should be program name).
-    std.debug.assert(args.skip());
-    const file = args.next() orelse return error.MissingArg;
-
-    // Open file and read contents, erroring if it is unexpectedly large.
     const handle = try std.fs.openFileAbsoluteZ(file, .{ .mode = .read_only });
     defer handle.close();
 

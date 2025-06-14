@@ -20,7 +20,7 @@ fn MatrixUnmanaged(comptime T: type) type {
 pub fn main() !void {
     const alloc = std.heap.smp_allocator;
     const stdout = std.io.getStdOut().writer();
-    const reports = try utils.getInputFile(alloc);
+    const reports = try utils.getInputFile(alloc, 2);
     defer alloc.free(reports);
 
     const count1 = try part1(alloc, reports);

@@ -6,7 +6,7 @@ const utils = @import("utils.zig");
 pub fn main() !void {
     const alloc = std.heap.smp_allocator;
     const stdout = std.io.getStdOut().writer();
-    const list = try utils.getInputFile(alloc);
+    const list = try utils.getInputFile(alloc, 1);
     defer alloc.free(list);
 
     const val1: u32 = try part1(alloc, list);
