@@ -4,15 +4,15 @@ const std = @import("std");
 
 /// Populate builder `b` with the build graph.
 pub fn build(b: *std.Build) void {
-    // Accept standard options.
+    // Accept standard CLI options.
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     // For each day in `days`, we hook up a standalone executable and test
     // suite. We handle the executables and the test suites in separate
     // for-loops to influence the order they get printed when running
-    // `zig build --help`. The end result is much more readable than
-    // alternating in one big loop.
+    // `zig build --help`. The end result is much more readable than we would
+    // get from one loop.
     const days = [_]u8{ 1, 2, 3 };
 
     // Provide executables for each day.

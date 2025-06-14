@@ -10,6 +10,9 @@ const std = @import("std");
 /// compiled binary directly, pass it the absolute path to the text file over
 /// the command line - something like
 /// `./zig-out/bin/day-01 $(realpath ./txt/day_01.txt)` will do.
+///
+/// Note: this function has a set upper limit on the maximum file size it will
+/// attempt to read as a safety measure, but it should be enough for our needs.
 pub fn getInputFile(alloc: std.mem.Allocator) ![]u8 {
     var args = try std.process.argsWithAllocator(alloc);
     defer args.deinit();
