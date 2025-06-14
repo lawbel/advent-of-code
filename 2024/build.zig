@@ -15,6 +15,40 @@ pub fn build(b: *std.Build) void {
     // get from one loop.
     const days = [_]u8{ 1, 2, 3 };
 
+    // Provide `zig build main` option that runs each day, one after the
+    // other in sequence. We take care to pass all input files via the
+    // appropriate environment variables.
+    const main_exe = b.addExecutable(.{
+        .name = "main",
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    b.installArtifact(main_exe);
+
+    const run_cmd = b.addRunArtifact(main_exe);
+    run_cmd.step.dependOn(b.getInstallStep());
+    inline for (days) |n| {
+        const env = std.fmt.comptimePrint("ZIG_AOC_DAY_{d:0>2}", .{n});
+        const txt = std.fmt.comptimePrint("txt/day_{d:0>2}.txt", .{n});
+        const path = b.pathJoin(&.{ b.build_root.path.?, txt });
+        run_cmd.setEnvironmentVariable(env, path);
+    }
+
+    const run_step = b.step("main", "Run all days");
+    run_step.dependOn(&run_cmd.step);
+
+    // Provide `zig build check` option to run all tests in each day. This is
+    // nice to have as a quick way to test the whole project.
+    const exe_tests = b.addTest(.{
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const run_exe_tests = b.addRunArtifact(exe_tests);
+    const test_step = b.step("check", "Test all days");
+    test_step.dependOn(&run_exe_tests.step);
+
     // Provide executables for each day.
     inline for (days) |n| {
         // Strings for main executable.
