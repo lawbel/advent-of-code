@@ -79,7 +79,7 @@ fn countSafe(
 /// and that the gap `right - left` is between 1 and 3 (inclusive).
 fn slowAsc(comptime T: type) fn (void, T, T) bool {
     return struct {
-        pub fn inner(_: void, r: T, l: T) bool {
+        fn inner(_: void, r: T, l: T) bool {
             return l > r or (r - l) < 1 or (r - l) > 3;
         }
     }.inner;
@@ -89,7 +89,7 @@ fn slowAsc(comptime T: type) fn (void, T, T) bool {
 /// and that the gap `left - right` is between 1 and 3 (inclusive).
 fn slowDesc(comptime T: type) fn (void, T, T) bool {
     return struct {
-        pub fn inner(_: void, r: T, l: T) bool {
+        fn inner(_: void, r: T, l: T) bool {
             return r > l or (l - r) < 1 or (l - r) > 3;
         }
     }.inner;
