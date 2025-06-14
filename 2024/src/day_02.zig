@@ -18,20 +18,14 @@ fn MatrixUnmanaged(comptime T: type) type {
 
 /// Run both parts for day 2.
 pub fn main() !void {
-    // Preamble.
-    var gpa = std.heap.DebugAllocator(.{}).init;
-    const alloc = gpa.allocator();
+    const alloc = std.heap.smp_allocator;
     const stdout = std.io.getStdOut().writer();
-
-    // Grab our input for the day.
     const reports = try utils.getInputFile(alloc);
     defer alloc.free(reports);
 
-    // Run part 1.
     const count1 = try part1(alloc, reports);
     try stdout.print("part 1: {d}\n", .{count1});
 
-    // Run part 2.
     const count2 = try part2(alloc, reports);
     try stdout.print("part 2: {d}\n", .{count2});
 }

@@ -4,20 +4,14 @@ const utils = @import("utils.zig");
 
 /// Run both parts for day 1.
 pub fn main() !void {
-    // Preamble.
-    var gpa = std.heap.DebugAllocator(.{}).init;
-    const alloc = gpa.allocator();
+    const alloc = std.heap.smp_allocator;
     const stdout = std.io.getStdOut().writer();
-
-    // Grab our input for the day.
     const list = try utils.getInputFile(alloc);
     defer alloc.free(list);
 
-    // Run part 1.
     const val1: u32 = try part1(alloc, list);
     try stdout.print("part 1: {d}\n", .{val1});
 
-    // Run part 2.
     const val2: u32 = try part2(alloc, list);
     try stdout.print("part 2: {d}\n", .{val2});
 }
