@@ -13,7 +13,7 @@ pub fn build(b: *std.Build) void {
     // for-loops to influence the order they get printed when running
     // `zig build --help`. The end result is much more readable than
     // alternating in one big loop.
-    const days: [2]u8 = .{ 1, 2 };
+    const days = [_]u8{ 1, 2, 3 };
 
     // Provide executables for each day.
     inline for (days) |n| {
