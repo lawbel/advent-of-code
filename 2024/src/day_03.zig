@@ -9,23 +9,23 @@ pub fn main() !void {
     const memory = try utils.getInputFile(alloc);
     defer alloc.free(memory);
 
-    try stdout.print("part 1: {d}\n", .{try part1(memory)});
-    try stdout.print("part 2: {d}\n", .{try part2(memory)});
+    try stdout.print("part 1: {d}\n", .{part1(memory)});
+    try stdout.print("part 2: {d}\n", .{part2(memory)});
 }
 
 /// Day 3, part 1.
-pub fn part1(memory: []const u8) !u32 {
+pub fn part1(memory: []const u8) u32 {
     return sumValidMulExprs(memory, .Ignore);
 }
 
 /// Day 3, part 2.
-pub fn part2(memory: []const u8) !u32 {
+pub fn part2(memory: []const u8) u32 {
     return sumValidMulExprs(memory, .Handle);
 }
 
 /// Iterate over every `MulExpr` in the given `memory`, calculating the result
 /// of the multiplication and adding it to a running total.
-fn sumValidMulExprs(memory: []const u8, comptime cond: Conditionals) !u32 {
+fn sumValidMulExprs(memory: []const u8, comptime cond: Conditionals) u32 {
     var muls = validMulExprs(memory, cond);
     var total: u32 = 0;
 
