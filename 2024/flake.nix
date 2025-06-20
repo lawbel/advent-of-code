@@ -20,13 +20,11 @@
         inherit name;
         src = ./.;
         nativeBuildInputs = [ zig-exe ];
-
         buildPhase = ''
           zig build install \
             --global-cache-dir .cache \
             --prefix $out
         '';
-
         doCheck = false;
         checkPhase = ''
           zig build test --global-cache-dir .cache
@@ -34,7 +32,10 @@
       };
 
       devShells.${system}.default = pkgs.mkShell {
-        nativeBuildInputs = [ zig-exe zls-exe ];
+        nativeBuildInputs = [
+          zig-exe
+          zls-exe
+        ];
       };
     };
 }
