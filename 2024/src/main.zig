@@ -2,6 +2,7 @@
 const day_01 = @import("./day_01.zig");
 const day_02 = @import("./day_02.zig");
 const day_03 = @import("./day_03.zig");
+const day_04 = @import("./day_04.zig");
 const std = @import("std");
 
 /// Run each day, one after the other.
@@ -16,6 +17,7 @@ pub fn main() !void {
         day_01.main,
         day_02.main,
         day_03.main,
+        day_04.main,
     };
 
     // Thanks to the above, we can save most of the repetition in running
@@ -28,9 +30,11 @@ pub fn main() !void {
     }
 }
 
-// Run all tests for every day.
+// Run all tests for every day. Is is enough to simply reference each module we
+// want to test, and the test runner will pick up any tests inside those.
 test "all" {
     _ = day_01;
     _ = day_02;
     _ = day_03;
+    _ = day_04;
 }
