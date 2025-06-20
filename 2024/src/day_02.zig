@@ -2,20 +2,6 @@
 const std = @import("std");
 const utils = @import("utils.zig");
 
-/// An array of arrays. Provides a helper `deinit` method for convenience.
-fn MatrixUnmanaged(comptime T: type) type {
-    return struct {
-        const Self = @This();
-
-        inner: std.ArrayListUnmanaged(std.ArrayListUnmanaged(T)),
-
-        fn deinit(self: *Self, alloc: std.mem.Allocator) void {
-            for (self.inner.items) |*arr| arr.deinit(alloc);
-            self.inner.deinit(alloc);
-        }
-    };
-}
-
 /// Run both parts for day 2.
 pub fn main() !void {
     const alloc = std.heap.smp_allocator;
@@ -236,15 +222,14 @@ test isApproxSorted {
 fn parseReports(
     alloc: std.mem.Allocator,
     string: []const u8,
-) !MatrixUnmanaged(u32) {
+) !utils.GridUnmanaged(u32) {
     // Pre-allocate room for the number of lines in the input. Should save us
     // from re-allocating much if at all.
     const assumed_len = std.mem.count(u8, string, "\n") + 1;
-    const Mat32 = std.ArrayListUnmanaged(std.ArrayListUnmanaged(u32));
+    const Mat32 = utils.GridUnmanaged(u32);
     const Vec32 = std.ArrayListUnmanaged(u32);
 
-    const inner = try Mat32.initCapacity(alloc, assumed_len);
-    var report: MatrixUnmanaged(u32) = .{ .inner = inner };
+    var report = try Mat32.initRowCapacity(alloc, assumed_len);
     errdefer report.deinit(alloc);
 
     // Iterate over each input row.
