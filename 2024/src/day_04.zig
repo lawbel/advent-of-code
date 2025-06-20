@@ -12,17 +12,20 @@ pub fn main() !void {
     var search = try asGrid(alloc, u8, word, '\n');
     defer search.deinit(alloc);
 
-    const count = try part1(alloc, search);
-    try stdout.print("part 1: {d}\n", .{count});
+    const count1 = try part1(alloc, search);
+    try stdout.print("part 1: {d}\n", .{count1});
+
+    const count2 = part2(search);
+    try stdout.print("part 2: {d}\n", .{count2});
 }
 
 /// Day 4, part 1.
 pub fn part1(alloc: std.mem.Allocator, search: utils.GridUnmanaged(u8)) !u32 {
     // Every way of making lines through the word search.
-    var nEast = try gridDiags(alloc, u8, .NorthEast, &search);
-    defer nEast.deinit(alloc);
-    var sEast = try gridDiags(alloc, u8, .SouthEast, &search);
-    defer sEast.deinit(alloc);
+    var n_east = try gridDiags(alloc, u8, .NorthEast, &search);
+    defer n_east.deinit(alloc);
+    var s_east = try gridDiags(alloc, u8, .SouthEast, &search);
+    defer s_east.deinit(alloc);
     var cols = try gridColumns(alloc, u8, &search);
     defer cols.deinit(alloc);
     var rows = gridRows(u8, &search);
@@ -37,13 +40,13 @@ pub fn part1(alloc: std.mem.Allocator, search: utils.GridUnmanaged(u8)) !u32 {
         count += std.mem.count(u8, col, "XMAS");
         count += std.mem.count(u8, col, "SAMX");
     }
-    while (nEast.next()) |diagNE| {
-        count += std.mem.count(u8, diagNE, "XMAS");
-        count += std.mem.count(u8, diagNE, "SAMX");
+    while (n_east.next()) |diag_ne| {
+        count += std.mem.count(u8, diag_ne, "XMAS");
+        count += std.mem.count(u8, diag_ne, "SAMX");
     }
-    while (sEast.next()) |diagSE| {
-        count += std.mem.count(u8, diagSE, "XMAS");
-        count += std.mem.count(u8, diagSE, "SAMX");
+    while (s_east.next()) |diag_se| {
+        count += std.mem.count(u8, diag_se, "XMAS");
+        count += std.mem.count(u8, diag_se, "SAMX");
     }
 
     return @intCast(count);
@@ -60,7 +63,143 @@ test part1 {
 }
 
 /// Day 4, part 2.
-pub fn part2() !void {}
+pub fn part2(search: utils.GridUnmanaged(u8)) u32 {
+    var windows = gridWindows(u8, 3, &search);
+    var count: usize = 0;
+
+    while (windows.next()) |win| {
+        const south_east: [3]u8 = .{ win[0][0], win[1][1], win[2][2] };
+        const north_east: [3]u8 = .{ win[2][0], win[1][1], win[0][2] };
+
+        const south_east_mas =
+            std.mem.eql(u8, &south_east, "MAS") or
+            std.mem.eql(u8, &south_east, "SAM");
+        const north_east_mas =
+            std.mem.eql(u8, &north_east, "MAS") or
+            std.mem.eql(u8, &north_east, "SAM");
+
+        if (north_east_mas and south_east_mas) count += 1;
+    }
+
+    return @intCast(count);
+}
+
+test part2 {
+    const alloc = std.testing.allocator;
+
+    var grid = try asGrid(alloc, u8, example_search, '\n');
+    defer grid.deinit(alloc);
+
+    const xmas_count = part2(grid);
+    try std.testing.expectEqual(9, xmas_count);
+}
+
+/// Iterate over windows into the grid of size `dim x dim`.
+fn gridWindows(
+    comptime T: type,
+    comptime dim: usize,
+    grid: *const utils.GridUnmanaged(T),
+) WindowIter(T, dim) {
+    return .{
+        .grid = grid,
+        .size = grid.inner.items.len,
+        .base_x = 0,
+        .base_y = 0,
+    };
+}
+
+/// An iterator of windows size `dim x dim` into a grid. By taking `dim` at
+/// comptime, we can avoid doing any allocation with this type.
+fn WindowIter(comptime T: type, comptime dim: usize) type {
+    return struct {
+        const Self = @This();
+
+        grid: *const utils.GridUnmanaged(T),
+        size: usize,
+        base_x: ?usize,
+        base_y: ?usize,
+
+        /// Get the next window into the grid (if any).
+        fn next(self: *Self) ?[dim][dim]T {
+            const base_x = self.base_x orelse return null;
+            const base_y = self.base_y orelse return null;
+
+            // Check that the current position window, anchored at base, is
+            // valid.
+            if (base_x + dim > self.size or base_y + dim > self.size) {
+                self.base_x = null;
+                self.base_y = null;
+                return null;
+            }
+
+            // Prepare the current window to be returned.
+            var window: [dim][dim]T = undefined;
+            inline for (0..dim) |i| {
+                const row_i = self.grid.inner.items[base_y + i];
+                const slice_i = row_i.items[base_x..][0..dim];
+                std.mem.copyForwards(T, &window[i], slice_i);
+            }
+
+            // Set variables ready for the next window (if any).
+            if (base_x + dim < self.size) {
+                self.base_x = base_x + 1;
+            } else if (base_y + dim < self.size) {
+                self.base_x = 0;
+                self.base_y = base_y + 1;
+            } else {
+                self.base_x = null;
+                self.base_y = null;
+            }
+
+            return window;
+        }
+    };
+}
+
+test "gridWindows(1).len() == size * size" {
+    const alloc = std.testing.allocator;
+    var grid = try asGrid(alloc, u8, example_search, '\n');
+    defer grid.deinit(alloc);
+
+    var count: usize = 0;
+    var windows = gridWindows(u8, 1, &grid);
+    while (windows.next()) |_| count += 1;
+
+    const grid_size = grid.inner.items.len * grid.inner.items.len;
+    try std.testing.expectEqual(grid_size, count);
+}
+
+test "gridWindows(size).len() == 1" {
+    const alloc = std.testing.allocator;
+    var grid = try asGrid(alloc, u8, example_search, '\n');
+    defer grid.deinit(alloc);
+
+    try std.testing.expectEqual(10, grid.inner.items.len);
+    var windows = gridWindows(u8, 10, &grid);
+
+    var count: usize = 0;
+    while (windows.next()) |_| count += 1;
+    try std.testing.expectEqual(1, count);
+}
+
+test "gridWindows(1) iterates character-wise" {
+    const alloc = std.testing.allocator;
+
+    var grid = try asGrid(alloc, u8, example_search, '\n');
+    defer grid.deinit(alloc);
+    var windows = gridWindows(u8, 1, &grid);
+
+    var i: usize = 0;
+    while (i < example_search.len) : (i += 1) {
+        if (example_search[i] == '\n') i += 1;
+        const expected = example_search[i];
+        const actual = windows.next() orelse return error.ShortWindowIter;
+        try std.testing.expectEqual(expected, actual[0][0]);
+    }
+
+    try std.testing.expectEqual(null, windows.next());
+    try std.testing.expectEqual(example_search.len, i);
+}
 
 /// Iterate over the rows in the given grid.
 fn gridRows(comptime T: type, grid: *const utils.GridUnmanaged(T)) RowIter(T) {
