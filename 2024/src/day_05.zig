@@ -11,6 +11,9 @@ pub fn main() !void {
 
     const sum1 = try part1(alloc, manual);
     try stdout.print("part 1: {d}\n", .{sum1});
+
+    const sum2 = try part2(alloc, manual);
+    try stdout.print("part 2: {d}\n", .{sum2});
 }
 
 /// Day 5, part 1.
@@ -32,6 +35,30 @@ pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u32 {
 test part1 {
     const alloc = std.testing.allocator;
     try std.testing.expectEqual(143, part1(alloc, example_manual));
+}
+
+/// Day 5, part 2.
+pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u32 {
+    var manual = try SafetyManual(u32).parse(alloc, text);
+    defer manual.deinit(alloc);
+
+    var sum: u32 = 0;
+    for (manual.updates.inner.items) |update| {
+        if (updateIsLegal(u32, manual.rules, update.items)) {
+            continue;
+        }
+
+        sortUpdate(u32, manual.rules, update.items);
+        const middle = update.items.len / 2;
+        sum += update.items[middle];
+    }
+
+    return sum;
+}
+
+test part2 {
+    const alloc = std.testing.allocator;
+    try std.testing.expectEqual(123, part2(alloc, example_manual));
 }
 
 /// Shorthand name for a (hash) set of pairs `(T, T)`.
@@ -152,6 +179,68 @@ test "SafetyManual.parse" {
     try std.testing.expectEqual(expected_items.len, actual_items.len);
     for (expected_items, actual_items) |exp, act| {
         try std.testing.expectEqualSlices(Int, exp.items, act.items);
+    }
+}
+
+/// Sort the given `update` according to `rules`.
+fn sortUpdate(
+    comptime T: type,
+    rules: Rules(T),
+    update: []T,
+) void {
+    const asc = struct {
+        pub fn inner(rule: *const Rules(T), a: T, b: T) bool {
+            const b_less_than_a = rule.contains(.{ b, a });
+            return !b_less_than_a;
+        }
+    }.inner;
+
+    // I figure we should prefer a stable sort. There is a `std.sort.block`
+    // with better asymptotics than insertion sort, but it only works on
+    // strict comparison operators (that is: `<` but not `<=`). I don't feel
+    // satisfied in assuming that based on the rules we have, so insertion
+    // will have to do.
+    std.sort.insertion(T, update, &rules, asc);
+}
+
+test sortUpdate {
+    const alloc = std.testing.allocator;
+    const Int = u32;
+
+    // It seems to be disallowed to mutate a local slice such as a `[3][]Int`.
+    // Instead it must be heap-allocated. We can at-least put the initial
+    // values here, and simply copy them over.
+    const static = [3][]const Int{
+        &.{ 75, 97, 47, 61, 53 },
+        &.{ 61, 13, 29 },
+        &.{ 97, 13, 75, 29, 47 },
+    };
+    var updates = [_]std.ArrayListUnmanaged(Int){.empty} ** static.len;
+    defer for (&updates) |*update| update.deinit(alloc);
+    for (static, 0..) |slice, i| {
+        try updates[i].appendSlice(alloc, slice);
+    }
+
+    const expected: [static.len][]const Int = .{
+        &.{ 97, 75, 47, 61, 53 },
+        &.{ 61, 29, 13 },
+        &.{ 97, 75, 47, 29, 13 },
+    };
+
+    // Now that we have our initial updates able to be sorted (mutated), we
+    // will get our rules in the most convenient way - parse the example once
+    // again.
+    var manual = try SafetyManual(Int).parse(alloc, example_manual);
+    defer manual.deinit(alloc);
+
+    // Finally we can do the actual test itself. Sort the above 'static'
+    // initial updates, and check if the result is as `expected`.
+    for (updates) |update| {
+        sortUpdate(Int, manual.rules, update.items);
+    }
+
+    for (expected, updates) |expect, actual| {
+        try std.testing.expectEqualSlices(Int, expect, actual.items);
     }
 }
 
