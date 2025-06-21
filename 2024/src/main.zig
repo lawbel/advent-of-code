@@ -1,9 +1,9 @@
 //! Convenience module that combines each day.
-const day_01 = @import("./day_01.zig");
-const day_02 = @import("./day_02.zig");
-const day_03 = @import("./day_03.zig");
-const day_04 = @import("./day_04.zig");
-const day_05 = @import("./day_05.zig");
+const day_01 = @import("day_01.zig");
+const day_02 = @import("day_02.zig");
+const day_03 = @import("day_03.zig");
+const day_04 = @import("day_04.zig");
+const day_05 = @import("day_05.zig");
 const std = @import("std");
 
 /// Run each day, one after the other.
