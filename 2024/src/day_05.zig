@@ -189,7 +189,7 @@ fn sortUpdate(
     update: []T,
 ) void {
     const asc = struct {
-        pub fn inner(rule: *const Rules(T), a: T, b: T) bool {
+        fn inner(rule: *const Rules(T), a: T, b: T) bool {
             const b_less_than_a = rule.contains(.{ b, a });
             return !b_less_than_a;
         }
