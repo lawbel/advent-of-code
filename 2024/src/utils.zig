@@ -2,6 +2,9 @@
 //! multiple files.
 const std = @import("std");
 
+/// The max size of an input file in bytes.
+pub const max_input_file_bytes = 1_000_000;
+
 /// Returns the contents of the input file for the given day. Caller owns
 /// returned memory.
 ///
@@ -12,11 +15,13 @@ const std = @import("std");
 /// binary directly, pass it the absolute path to the text file
 /// yourself - something like the below would do.
 ///
-///     ZIG_AOC_DAY_01=$(realpath ./txt/day_01.txt) ./zig-out/bin/day-01
+/// ```shell
+/// ZIG_AOC_DAY_01=$(realpath ./txt/day_01.txt) ./zig-out/bin/day-01
+/// ```
 ///
-/// Note: this function has a set upper limit on the maximum file size it will
-/// attempt to read, which acts as a safety measure. It should be more than
-/// sufficient for our purposes.
+/// Note: this function has an upper limit on the maximum file size it will
+/// attempt to read, `max_input_file_bytes`, which acts as a safety measure.
+/// It should be more than sufficient for our purposes.
 pub fn getInputFile(alloc: std.mem.Allocator, comptime day: u8) ![]u8 {
     const env = std.fmt.comptimePrint("ZIG_AOC_DAY_{d:0>2}", .{day});
     const file = std.posix.getenv(env) orelse return error.MissingEnvVar;
@@ -24,8 +29,7 @@ pub fn getInputFile(alloc: std.mem.Allocator, comptime day: u8) ![]u8 {
     const handle = try std.fs.openFileAbsoluteZ(file, .{ .mode = .read_only });
     defer handle.close();
 
-    const max_bytes = 1_000_000;
-    return handle.readToEndAlloc(alloc, max_bytes);
+    return handle.readToEndAlloc(alloc, max_input_file_bytes);
 }
 
 /// An array of arrays, where each array is expected to have the same length.
