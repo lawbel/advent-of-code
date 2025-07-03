@@ -9,20 +9,41 @@ pub fn main() !void {
     const equations = try utils.getInputFile(alloc, 7);
     defer alloc.free(equations);
 
-    const calibration = try part1(alloc, equations);
-    try stdout.print("part 1: {d}\n", .{calibration});
+    const result1 = try part1(alloc, equations);
+    try stdout.print("part 1: {d}\n", .{result1});
+
+    const result2 = try part2(alloc, equations);
+    try stdout.print("part 2: {d}\n", .{result2});
 }
 
 /// Day 7, part 1. Parse the given equations, and work out which ones are
-/// solvable. For those equations, sum up the target values and return the
-/// total.
+/// solvable using addition and multiplication. For those equations, sum up
+/// the target values and return the total.
 pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u64 {
     var equations = try Equations(u64).parse(alloc, text);
     defer equations.deinit(alloc);
+    return calibration(alloc, u64, equations, AddMul);
+}
 
+/// Day 7, part 2. Similar to `part1`, but allow concatenation as well as
+/// addition and multiplication.
+pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u64 {
+    var equations = try Equations(u64).parse(alloc, text);
+    defer equations.deinit(alloc);
+    return calibration(alloc, u64, equations, AddMulCat);
+}
+
+/// Calculate the total calibration result for the given equations.
+pub fn calibration(
+    alloc: std.mem.Allocator,
+    comptime T: type,
+    equations: Equations(T),
+    comptime Op: type,
+) !u64 {
     var total: u64 = 0;
+
     for (equations.in.items) |equation| {
-        var solution = try equation.solution(alloc);
+        var solution = try equation.solution(alloc, Op);
         if (solution) |*list| {
             list.deinit(alloc);
             total += equation.target;
@@ -30,12 +51,6 @@ pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u64 {
     }
 
     return total;
-}
-
-test part1 {
-    const alloc = std.testing.allocator;
-    const calibration = try part1(alloc, example_equations);
-    try std.testing.expectEqual(3749, calibration);
 }
 
 /// Iterate over every possible combination of `values` of size `len`. For
@@ -242,9 +257,6 @@ test "Equations.parse" {
     }
 }
 
-/// A binary operator - add `(+)` or multiply `(*)`.
-const Op = union(enum) { Add, Mul };
-
 /// An equation representing a target and a list of numbers.
 fn Equation(comptime T: type) type {
     return struct {
@@ -295,16 +307,13 @@ fn Equation(comptime T: type) type {
         /// ```
         /// (((i0 `o1` i1) `o2` i2) ... `oN` iN)
         /// ```
-        fn eval(self: Self, ops: []const Op) ?T {
+        fn eval(self: Self, comptime Op: type, ops: []const Op) ?T {
             if (self.numbers.items.len != ops.len + 1) return null;
             if (self.numbers.items.len == 0) return 0;
 
             var result: T = self.numbers.items[0];
             for (self.numbers.items[1..], ops) |number, op| {
-                result = switch (op) {
-                    .Add => result + number,
-                    .Mul => result * number,
-                };
+                result = op.apply(T, result, number);
             }
             return result;
         }
@@ -315,15 +324,25 @@ fn Equation(comptime T: type) type {
         fn solution(
             self: Self,
             alloc: std.mem.Allocator,
+            comptime Op: type,
         ) !?std.ArrayListUnmanaged(Op) {
             const len = self.numbers.items.len;
             if (len == 0) return null;
 
-            var iter = try combinations(alloc, Op, &.{ .Add, .Mul }, len - 1);
+            const all_ops: []const Op = init: {
+                const fields = @typeInfo(Op).@"union".fields;
+                var ops: [fields.len]Op = undefined;
+                inline for (fields, 0..) |field, i| {
+                    ops[i] = @unionInit(Op, field.name, {});
+                }
+                break :init &ops;
+            };
+
+            var iter = try combinations(alloc, Op, all_ops, len - 1);
             defer iter.deinit(alloc);
 
             while (iter.next()) |ops| {
-                if (self.eval(ops) == self.target) {
+                if (self.eval(Op, ops) == self.target) {
                     var list: std.ArrayListUnmanaged(Op) = .empty;
                     errdefer list.deinit(alloc);
 
@@ -337,24 +356,91 @@ fn Equation(comptime T: type) type {
     };
 }
 
-test "Equation.solution" {
+/// Addition `(+)` or multiply `(*)` operator.
+const AddMul = union(enum) {
+    const Self = @This();
+
+    Add,
+    Mul,
+
+    /// Apply this operator to the given values.
+    fn apply(self: Self, comptime T: type, x: T, y: T) T {
+        return switch (self) {
+            .Add => x + y,
+            .Mul => x * y,
+        };
+    }
+};
+
+test "Equation.solution(AddMul)" {
     const alloc = std.testing.allocator;
     const Int = i64;
     const soluble = [_]Int{ 190, 3267, 292 };
+    const result: Int = 3749;
 
     var equations = try Equations(Int).parse(alloc, example_equations);
     defer equations.deinit(alloc);
 
+    var total: Int = 0;
     for (equations.in.items) |equation| {
-        var solution = try equation.solution(alloc);
+        var solution = try equation.solution(alloc, AddMul);
         defer if (solution) |*list| list.deinit(alloc);
 
         const actual: bool = (solution != null);
         const expected: bool =
             std.mem.indexOfScalar(Int, &soluble, equation.target) != null;
-
         try std.testing.expectEqual(expected, actual);
+
+        if (solution != null) total += equation.target;
     }
+
+    try std.testing.expectEqual(result, total);
+}
+
+/// Addition `(+)` or multiply `(*)` or concatenate `(||)` operator.
+const AddMulCat = union(enum) {
+    const Self = @This();
+
+    Add,
+    Mul,
+    Cat,
+
+    /// Apply this operator to the given values.
+    fn apply(self: Self, comptime T: type, x: T, y: T) T {
+        switch (self) {
+            .Add => return x + y,
+            .Mul => return x * y,
+            .Cat => {
+                const shift: T = std.math.log10_int(y) + 1;
+                return (x * std.math.pow(T, 10, shift)) + y;
+            },
+        }
+    }
+};
+
+test "Equation.solution(AddMulCat)" {
+    const alloc = std.testing.allocator;
+    const Int = u64;
+    const soluble = [_]Int{ 190, 3267, 156, 7290, 192, 292 };
+    const result: Int = 11_387;
+
+    var equations = try Equations(Int).parse(alloc, example_equations);
+    defer equations.deinit(alloc);
+
+    var total: Int = 0;
+    for (equations.in.items) |equation| {
+        var solution = try equation.solution(alloc, AddMulCat);
+        defer if (solution) |*list| list.deinit(alloc);
+
+        const actual: bool = (solution != null);
+        const expected: bool =
+            std.mem.indexOfScalar(Int, &soluble, equation.target) != null;
+        try std.testing.expectEqual(expected, actual);
+
+        if (solution != null) total += equation.target;
+    }
+
+    try std.testing.expectEqual(result, total);
 }
 
 /// The running example of a set of equations for day 7.
