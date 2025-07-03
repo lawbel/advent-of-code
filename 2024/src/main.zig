@@ -5,6 +5,7 @@ const day_03 = @import("day_03.zig");
 const day_04 = @import("day_04.zig");
 const day_05 = @import("day_05.zig");
 const day_06 = @import("day_06.zig");
+const day_07 = @import("day_07.zig");
 const std = @import("std");
 
 /// Run each day, one after the other.
@@ -17,7 +18,7 @@ pub fn main() !void {
     const MainType = @TypeOf(main);
     const mains = [_]MainType{
         day_01.main, day_02.main, day_03.main, day_04.main, day_05.main,
-        day_06.main,
+        day_06.main, day_07.main,
     };
 
     // Thanks to the above, we can save most of the repetition in running
@@ -39,4 +40,5 @@ test "all" {
     _ = day_04;
     _ = day_05;
     _ = day_06;
+    _ = day_07;
 }
