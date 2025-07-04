@@ -20,18 +20,18 @@ pub fn build(b: *std.Build) void {
         break :init list;
     };
 
-    // Provide `zig build main` option that runs each day, one after the
+    // Provide `zig build all` option that runs each day, one after the
     // other in sequence. We take care to pass all input files via the
     // appropriate environment variables.
-    const main_exe = b.addExecutable(.{
-        .name = "main",
+    const all_exe = b.addExecutable(.{
+        .name = "all",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
-    b.installArtifact(main_exe);
+    b.installArtifact(all_exe);
 
-    const run_cmd = b.addRunArtifact(main_exe);
+    const run_cmd = b.addRunArtifact(all_exe);
     run_cmd.step.dependOn(b.getInstallStep());
     inline for (days) |n| {
         const env = std.fmt.comptimePrint("ZIG_AOC_DAY_{d:0>2}", .{n});
@@ -40,7 +40,7 @@ pub fn build(b: *std.Build) void {
         run_cmd.setEnvironmentVariable(env, path);
     }
 
-    const run_step = b.step("main", "Run all days");
+    const run_step = b.step("all", "Run all days");
     run_step.dependOn(&run_cmd.step);
 
     // Provide `zig build check` option to run all tests in each day. This is

@@ -18,37 +18,49 @@
       inherit (pkgs.lib) attrsets lists strings;
       dayNums = lists.range 1 8;
       dayStrs = map (strings.fixedWidthNumber 2) dayNums;
-      rename = name: value: attrsets.nameValuePair "day-${name}" value;
-      daysNumbered = target: attrsets.genAttrs dayStrs (runDay target);
-      daysNamed = target: attrsets.mapAttrs' rename (daysNumbered target);
-      runDay = target: num: pkgs.writeShellApplication {
-        name = "day-${num}";
+
+      mkShellApp = sys: name: build: exports: {
+        type = "app";
+        program = "${mkShellProg sys name build exports}/bin/${name}";
+      };
+      mkShellProg = sys: name: build: exports: pkgs.writeShellApplication {
+        inherit name;
         runtimeInputs = [ zig-exe ];
         text = ''
-          export ZIG_AOC_DAY_${num}=${./txt/day_${num}.txt}
-          zig build day-${num} \
+          ${exports}
+          zig build ${build} \
             -Doptimize=ReleaseSmall \
-            -Dtarget=${target} \
+            -Dtarget=${sys} \
             --color off
         '';
       };
 
+      export = num: "export ZIG_AOC_DAY_${num}=${./txt/day_${num}.txt}";
+      rename = name: value: attrsets.nameValuePair "day-${name}" value;
+
+      dayApps = sys: attrsets.mapAttrs' rename (days sys);
+      days = sys: attrsets.genAttrs dayStrs (day sys);
+      day = sys: num: mkShellApp sys "day-${num}" "day-${num}" (export num);
+
     in {
-      packages.${system} = daysNamed system // {
-        default = self.packages.${system}.compile;
-        compile = pkgs.stdenvNoCC.mkDerivation {
-          inherit name;
-          src = ./.;
-          nativeBuildInputs = [ zig-exe ];
-          buildPhase = ''
-            export ZIG_GLOBAL_CACHE_DIR=$TMPDIR/zig-cache
-            zig build install \
-              -Doptimize=ReleaseFast \
-              -Dtarget=${system} \
-              --color off \
-              --prefix $out
-          '';
-        };
+      packages.${system}.default = pkgs.stdenvNoCC.mkDerivation {
+        inherit name;
+        src = ./.;
+        nativeBuildInputs = [ zig-exe ];
+        buildPhase = ''
+          export ZIG_GLOBAL_CACHE_DIR=$TMPDIR/zig-cache
+          zig build install \
+            -Doptimize=ReleaseFast \
+            -Dtarget=${system} \
+            --color off \
+            --prefix $out
+        '';
+      };
+
+      apps.${system} = dayApps system // {
+        all-days = mkShellApp system "all-days" "all" (
+          strings.concatMapStringsSep "\n" export dayStrs
+        );
       };
 
       devShells.${system}.default = pkgs.mkShell {
