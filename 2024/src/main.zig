@@ -34,11 +34,8 @@ pub fn main() !void {
 // Run all tests for every day. Is is enough to simply reference each module we
 // want to test, and the test runner will pick up any tests inside those.
 test "all" {
-    _ = day_01;
-    _ = day_02;
-    _ = day_03;
-    _ = day_04;
-    _ = day_05;
-    _ = day_06;
-    _ = day_07;
+    _ = .{
+        day_01, day_02, day_03, day_04, day_05,
+        day_06, day_07,
+    };
 }
