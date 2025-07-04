@@ -6,46 +6,25 @@ const utils = @import("utils.zig");
 pub fn main() !void {
     const alloc = std.heap.smp_allocator;
     const stdout = std.io.getStdOut().writer();
-    const equations = try utils.getInputFile(alloc, 7);
-    defer alloc.free(equations);
+    const lines = try utils.getInputFile(alloc, 7);
+    defer alloc.free(lines);
 
-    const result1 = try part1(alloc, equations);
-    try stdout.print("part 1: {d}\n", .{result1});
+    const Int = u64;
+    var equations = try Equations(Int).parse(alloc, lines);
+    defer equations.deinit(alloc);
 
-    const result2 = try part2(alloc, equations);
-    try stdout.print("part 2: {d}\n", .{result2});
+    try stdout.print("part 1: {d}\n", .{try part1(Int, equations)});
+    try stdout.print("part 2: {d}\n", .{try part2(Int, equations)});
 }
 
 /// Day 7, part 1. Parse the given equations, and work out which ones are
 /// solvable using addition and multiplication. For those equations, sum up
 /// the target values and return the total.
-pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u64 {
-    var equations = try Equations(u64).parse(alloc, text);
-    defer equations.deinit(alloc);
-    return calibration(alloc, u64, equations, AddMul);
-}
-
-/// Day 7, part 2. Similar to `part1`, but allow concatenation as well as
-/// addition and multiplication.
-pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u64 {
-    var equations = try Equations(u64).parse(alloc, text);
-    defer equations.deinit(alloc);
-    return calibration(alloc, u64, equations, AddMulCat);
-}
-
-/// Calculate the total calibration result for the given equations.
-pub fn calibration(
-    alloc: std.mem.Allocator,
-    comptime T: type,
-    equations: Equations(T),
-    comptime Op: type,
-) !u64 {
-    var total: u64 = 0;
+pub fn part1(comptime T: type, equations: Equations(T)) !T {
+    var total: T = 0;
 
     for (equations.in.items) |equation| {
-        var solution = try equation.solution(alloc, Op);
-        if (solution) |*list| {
-            list.deinit(alloc);
+        if (equation.hasSolution(AddMul)) {
             total += equation.target;
         }
     }
@@ -53,134 +32,18 @@ pub fn calibration(
     return total;
 }
 
-/// Iterate over every possible combination of `values` of size `len`. For
-/// example, `combinations(alloc, u8, "ab", 2)` yields
-/// `.{ "aa", "ba", "ab", "bb" }`.
-///
-/// The returned iterator needs freeing with `.deinit(alloc)`.
-fn combinations(
-    alloc: std.mem.Allocator,
-    comptime T: type,
-    values: []const T,
-    len: usize,
-) !CombinationIter(T) {
-    if (values.len == 0) return error.EmptyValues;
+/// Day 7, part 2. Similar to `part1`, but allow concatenation as well as
+/// addition and multiplication.
+pub fn part2(comptime T: type, equations: Equations(T)) !T {
+    var total: T = 0;
 
-    var buffer: std.ArrayListUnmanaged(T) = .empty;
-    errdefer buffer.deinit(alloc);
-    var indices: std.ArrayListUnmanaged(usize) = .empty;
-    errdefer indices.deinit(alloc);
-
-    try buffer.appendNTimes(alloc, values[0], len);
-    try indices.appendNTimes(alloc, 0, len);
-
-    return .{
-        .values = values,
-        .buffer = buffer,
-        .indices = indices,
-    };
-}
-
-/// An iterator that yields slices `[]const T` for every combination of the
-/// given values of the given length.
-fn CombinationIter(comptime T: type) type {
-    return struct {
-        const Self = @This();
-
-        /// Possible values for each element.
-        values: []const T,
-
-        /// Backing memory, mutated on each call to `next`.
-        buffer: std.ArrayListUnmanaged(T),
-
-        /// Mirrors the contents of buffer, except that it stores the
-        /// index `i` rather than the element `values[i]` at that position.
-        indices: std.ArrayListUnmanaged(usize),
-
-        /// Helper var for book-keeping - makes it easy to return the
-        /// original buffer without mutation on the first call to `next`.
-        first: bool = true,
-
-        /// Free memory associated with this type.
-        fn deinit(self: *Self, alloc: std.mem.Allocator) void {
-            self.buffer.deinit(alloc);
-            self.indices.deinit(alloc);
+    for (equations.in.items) |equation| {
+        if (equation.hasSolution(AddMulCat)) {
+            total += equation.target;
         }
-
-        /// Reset the iterator to its initial state.
-        fn reset(self: *Self) void {
-            self.first = true;
-            for (self.buffer.items) |*val| val.* = self.values[0];
-            for (self.indices.items) |*i| i.* = 0;
-        }
-
-        /// Yield the next iteration (if any).
-        fn next(self: *Self) ?[]const T {
-            // On first call of `next`, simply return the buffer unchanged.
-            if (self.first) {
-                self.first = false;
-                return self.buffer.items;
-            }
-
-            // On all subsequent calls, we do essentially a carry add:
-            //
-            // * check position zero;
-            // * if that would roll over, check position one;
-            // * if that would roll over, check position two;
-            //
-            // and so on, going as far along the buffer as needed or as
-            // possible.
-            const limit: usize = self.values.len - 1;
-            const len: usize = self.indices.items.len;
-
-            var i: usize = 0;
-            while (i < len) : (i += 1) {
-                if (self.indices.items[i] < limit) break;
-            }
-
-            // If we got to the end of the list, then every single position is
-            // maxed out. So there are no more iterations to yield.
-            if (i == len) return null;
-
-            // Otherwise, we stopped part-way through the list. Every element
-            // before position `i` needs zero-ing out. Position `i` itself
-            // is not maxed out yet, so simply increment it by one.
-            const cur = self.indices.items[i];
-            self.indices.items[i] = cur + 1;
-            self.buffer.items[i] = self.values[cur + 1];
-
-            for (0..i) |j| {
-                self.indices.items[j] = 0;
-                self.buffer.items[j] = self.values[0];
-            }
-
-            // Return a view into the current state of the buffer.
-            return self.buffer.items;
-        }
-    };
-}
-
-test combinations {
-    const alloc = std.testing.allocator;
-    const expected = [_][]const u8{
-        "000",
-        "100",
-        "010",
-        "110",
-        "001",
-        "101",
-        "011",
-        "111",
-    };
-
-    var iter = try combinations(alloc, u8, "01", 3);
-    defer iter.deinit(alloc);
-
-    for (expected) |exp| {
-        const actual = iter.next() orelse return error.ShortIter;
-        try std.testing.expectEqualStrings(exp, actual);
     }
-    try std.testing.expectEqual(null, iter.next());
+
+    return total;
 }
 
 /// A list of `Equation`s.
@@ -222,7 +85,6 @@ fn Equations(comptime T: type) type {
 test "Equations.parse" {
     const alloc = std.testing.allocator;
     const Int = u32;
-
     const static = [_][]const Int{
         &.{ 190, 10, 19 },
         &.{ 3267, 81, 40, 27 },
@@ -234,6 +96,7 @@ test "Equations.parse" {
         &.{ 21037, 9, 7, 18, 13 },
         &.{ 292, 11, 6, 16, 20 },
     };
+
     var expected: Equations(Int) = .empty;
     defer expected.deinit(alloc);
     for (static) |slice| {
@@ -296,62 +159,40 @@ fn Equation(comptime T: type) type {
             return .{ .target = target, .numbers = numbers };
         }
 
-        /// Suppose that we name the list elements like so:
-        ///
-        /// * `self.numbers = [i0, i1, ..., iN]`
-        /// * `ops          =     [o1, ..., oN]`
-        ///
-        /// where each `o1, o2, ...` represents either addition `(+)` or
-        /// multiplication `(*)`. Then this function returns the result
-        ///
-        /// ```
-        /// (((i0 `o1` i1) `o2` i2) ... `oN` iN)
-        /// ```
-        fn eval(self: Self, comptime Op: type, ops: []const Op) ?T {
-            if (self.numbers.items.len != ops.len + 1) return null;
-            if (self.numbers.items.len == 0) return 0;
-
-            var result: T = self.numbers.items[0];
-            for (self.numbers.items[1..], ops) |number, op| {
-                result = op.apply(T, result, number);
-            }
-            return result;
+        /// Returns whether or not there exists a valid solution to
+        /// this equation. Assumes that all operators `op: Op` increase
+        /// their inputs - that `op.apply(T, a, b) >= a` for
+        /// any `a, b : T`. Recursively calls `trySolveFrom`, at a max depth
+        /// of `self.numbers.items.len`.
+        fn hasSolution(self: Self, comptime Op: type) bool {
+            return self.trySolveFrom(Op, 0, 0);
         }
 
-        /// Returns a valid solution (if any exists) to this equation. If there
-        /// are multiple solutions, returns the first one it finds in no
-        /// particular order.
-        fn solution(
+        /// Checks for any solution using operators `op: Op` on the remaining
+        /// values `self.numbers[index .. ]` to increase the `total` value
+        /// until it reaches `self.target`. Assumes that all operators
+        /// `op: Op` increase the value of their inputs.
+        fn trySolveFrom(
             self: Self,
-            alloc: std.mem.Allocator,
             comptime Op: type,
-        ) !?std.ArrayListUnmanaged(Op) {
-            const len = self.numbers.items.len;
-            if (len == 0) return null;
+            total: T,
+            index: usize,
+        ) bool {
+            if (index == self.numbers.items.len) {
+                return (total == self.target);
+            }
 
-            const all_ops: []const Op = init: {
-                const fields = @typeInfo(Op).@"union".fields;
-                var ops: [fields.len]Op = undefined;
-                inline for (fields, 0..) |field, i| {
-                    ops[i] = @unionInit(Op, field.name, {});
-                }
-                break :init &ops;
-            };
-
-            var iter = try combinations(alloc, Op, all_ops, len - 1);
-            defer iter.deinit(alloc);
-
-            while (iter.next()) |ops| {
-                if (self.eval(Op, ops) == self.target) {
-                    var list: std.ArrayListUnmanaged(Op) = .empty;
-                    errdefer list.deinit(alloc);
-
-                    try list.appendSlice(alloc, ops);
-                    return list;
+            const item = self.numbers.items[index];
+            inline for (@typeInfo(Op).@"union".fields) |field| {
+                const op = @unionInit(Op, field.name, {});
+                const next: T = op.apply(T, total, item);
+                const over = (next > self.target);
+                if (!over and self.trySolveFrom(Op, next, index + 1)) {
+                    return true;
                 }
             }
 
-            return null;
+            return false;
         }
     };
 }
@@ -372,7 +213,7 @@ const AddMul = union(enum) {
     }
 };
 
-test "Equation.solution(AddMul)" {
+test "Equation.hasSolution(AddMul)" {
     const alloc = std.testing.allocator;
     const Int = i64;
     const soluble = [_]Int{ 190, 3267, 292 };
@@ -383,15 +224,12 @@ test "Equation.solution(AddMul)" {
 
     var total: Int = 0;
     for (equations.in.items) |equation| {
-        var solution = try equation.solution(alloc, AddMul);
-        defer if (solution) |*list| list.deinit(alloc);
+        const index = std.mem.indexOfScalar;
+        const expected: bool = index(Int, &soluble, equation.target) != null;
+        const actual: bool = equation.hasSolution(AddMul);
 
-        const actual: bool = (solution != null);
-        const expected: bool =
-            std.mem.indexOfScalar(Int, &soluble, equation.target) != null;
         try std.testing.expectEqual(expected, actual);
-
-        if (solution != null) total += equation.target;
+        if (actual) total += equation.target;
     }
 
     try std.testing.expectEqual(result, total);
@@ -411,14 +249,15 @@ const AddMulCat = union(enum) {
             .Add => return x + y,
             .Mul => return x * y,
             .Cat => {
-                const shift: T = std.math.log10_int(y) + 1;
-                return (x * std.math.pow(T, 10, shift)) + y;
+                const shift = std.math.log10_int(y) + 1;
+                const tens = std.math.pow(T, 10, shift);
+                return (x * tens) + y;
             },
         }
     }
 };
 
-test "Equation.solution(AddMulCat)" {
+test "Equation.hasSolution(AddMulCat)" {
     const alloc = std.testing.allocator;
     const Int = u64;
     const soluble = [_]Int{ 190, 3267, 156, 7290, 192, 292 };
@@ -429,15 +268,12 @@ test "Equation.solution(AddMulCat)" {
 
     var total: Int = 0;
     for (equations.in.items) |equation| {
-        var solution = try equation.solution(alloc, AddMulCat);
-        defer if (solution) |*list| list.deinit(alloc);
+        const index = std.mem.indexOfScalar;
+        const expected: bool = index(Int, &soluble, equation.target) != null;
+        const actual: bool = equation.hasSolution(AddMulCat);
 
-        const actual: bool = (solution != null);
-        const expected: bool =
-            std.mem.indexOfScalar(Int, &soluble, equation.target) != null;
         try std.testing.expectEqual(expected, actual);
-
-        if (solution != null) total += equation.target;
+        if (actual) total += equation.target;
     }
 
     try std.testing.expectEqual(result, total);
