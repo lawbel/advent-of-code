@@ -12,6 +12,9 @@ pub fn main() !void {
 
     const locations = try part1(alloc, map);
     try stdout.print("part 1: {d}\n", .{locations});
+
+    const harmonic = try part2(alloc, map);
+    try stdout.print("part 2: {d}\n", .{harmonic});
 }
 
 /// Day 8, part 1. Parse the map, grouping together antennae of the same
@@ -21,6 +24,14 @@ pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u32 {
     var map = try Map.parse(alloc, text);
     defer map.deinit(alloc);
     return map.numAntinodes(alloc);
+}
+
+/// Day 8, part 2 - the same as part 1, except that we count the antinodes
+/// harmonically.
+pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u32 {
+    var map = try Map.parse(alloc, text);
+    defer map.deinit(alloc);
+    return map.numAntinodesHarmonic(alloc);
 }
 
 /// An (array) hashmap from `K` to a list of `V`s.
@@ -95,6 +106,47 @@ const Map = struct {
         return antinodes.count();
     }
 
+    /// Count the number of antinodes within the bounds of the map, taking into
+    /// account the effect of resonant harmonics.
+    fn numAntinodesHarmonic(self: Self, alloc: std.mem.Allocator) !u32 {
+        var antinodes: std.AutoHashMapUnmanaged(Coord(isize), void) = .empty;
+        defer antinodes.deinit(alloc);
+
+        const bound_u: Coord(usize) = .{ .x = self.width, .y = self.height };
+        const bound = bound_u.cast(isize) orelse return error.IntCast;
+
+        for (self.antennae.in.entries.items(.value)) |list| {
+            if (list.len < 2) continue;
+            const xs: []usize = list.items(.x);
+            const ys: []usize = list.items(.y);
+
+            for (xs, ys, 1..) |one_x, one_y, i| {
+                const one_u: Coord(usize) = .{ .x = one_x, .y = one_y };
+                const one = one_u.cast(isize) orelse return error.IntCast;
+
+                for (xs[i..], ys[i..]) |two_x, two_y| {
+                    const two_u: Coord(usize) = .{ .x = two_x, .y = two_y };
+                    const two = two_u.cast(isize) orelse return error.IntCast;
+                    const step = one.sub(two).reduced();
+
+                    var pos: ?Coord(isize) = one;
+                    while (pos) |node| {
+                        try antinodes.put(alloc, node, {});
+                        pos = node.addBoundPos(step, bound);
+                    }
+
+                    pos = one.subBoundPos(step, bound);
+                    while (pos) |node| {
+                        try antinodes.put(alloc, node, {});
+                        pos = node.subBoundPos(step, bound);
+                    }
+                }
+            }
+        }
+
+        return antinodes.count();
+    }
+
     /// Parse from a string. Any alphanumeric characters are recognised as
     /// antennae, any other characters are skipped over.
     fn parse(alloc: std.mem.Allocator, text: []const u8) !Self {
@@ -140,6 +192,15 @@ test "Map.numAntinodes" {
 
     const count = try map.numAntinodes(alloc);
     try std.testing.expectEqual(14, count);
+}
+
+test "Map.numAntinodesHarmonic" {
+    const alloc = std.testing.allocator;
+    var map = try Map.parse(alloc, example_map);
+    defer map.deinit(alloc);
+
+    const count = try map.numAntinodesHarmonic(alloc);
+    try std.testing.expectEqual(34, count);
 }
 
 test "Map.parse" {

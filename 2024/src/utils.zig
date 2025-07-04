@@ -112,6 +112,24 @@ pub fn Coord(comptime T: type) type {
             return self.sub(other);
         }
 
+        /// Subtract one coordinate from another. Returns null if the result
+        /// would go beyond the given bounds, or go into negative coordinates.
+        pub fn subBoundPos(self: Self, other: Self, bounds: Self) ?Self {
+            const new = self.subPos(other) orelse return null;
+            if (new.x >= bounds.x or new.y >= bounds.y) return null;
+            return new;
+        }
+
+        /// Reduce a coordinate - divide both x and y by `gcd(x, y)`.
+        pub fn reduced(self: Self) Self {
+            const gcd = std.math.gcd(@abs(self.x), @abs(self.y));
+            const hcf = std.math.cast(T, gcd) orelse unreachable;
+            return .{
+                .x = @divExact(self.x, hcf),
+                .y = @divExact(self.y, hcf),
+            };
+        }
+
         /// Cast `x` and `y` coordinates to a new type. Returns null if
         /// either value doesn't fit.
         pub fn cast(self: Self, comptime U: type) ?Coord(U) {
