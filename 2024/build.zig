@@ -14,7 +14,7 @@ pub fn build(b: *std.Build) void {
     // printed when running `zig build --help` or similar. The end result is
     // much more readable than we would otherwise get.
     const days = comptime init: {
-        const max = 7;
+        const max = 8;
         var list: [max]u8 = undefined;
         for (&list, 1..) |*day, n| day.* = n;
         break :init list;

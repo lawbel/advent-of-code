@@ -16,7 +16,7 @@
       zls-exe = zls.packages.${system}.zls;
 
       inherit (pkgs.lib) attrsets lists strings;
-      dayNums = lists.range 1 7;
+      dayNums = lists.range 1 8;
       dayStrs = map (strings.fixedWidthNumber 2) dayNums;
       rename = name: value: attrsets.nameValuePair "day-${name}" value;
       daysNumbered = target: attrsets.genAttrs dayStrs (runDay target);

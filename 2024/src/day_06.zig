@@ -1,6 +1,7 @@
 //! Advent of Code 2024, Day 6: Guard Gallivant.
 const std = @import("std");
 const utils = @import("utils.zig");
+const Coord = utils.Coord;
 
 /// Run both parts for day 6.
 pub fn main() !void {
@@ -55,44 +56,6 @@ test part2 {
     const alloc = std.testing.allocator;
     const loops = try part2(alloc, example_map);
     try std.testing.expectEqual(6, loops);
-}
-
-/// A coordinate - a position `(x, y)`.
-fn Coord(comptime T: type) type {
-    return struct {
-        const Self = @This();
-
-        x: T = 0,
-        y: T = 0,
-
-        /// Add two coordinates together. If non-null `bounds` are given,
-        /// returns an error when the result would go beyond those bounds.
-        fn add(self: Self, other: Self, bounds: ?Self) !Self {
-            const new_x = self.x + other.x;
-            const new_y = self.y + other.y;
-
-            if (bounds) |bound| {
-                if (new_x >= bound.x or new_y >= bound.y) {
-                    return error.OutOfBounds;
-                }
-            }
-
-            return .{ .x = new_x, .y = new_y };
-        }
-
-        /// Subtract one coordinate from another. Returns an error if the
-        /// result would go into negative coordinates.
-        fn sub(self: Self, other: Self) !Self {
-            if (self.x < other.x or self.y < other.y) {
-                return error.OutOfBounds;
-            }
-
-            return .{
-                .x = self.x - other.x,
-                .y = self.y - other.y,
-            };
-        }
-    };
 }
 
 /// A wrapper around `std.math.order` at the given type `T`. Needed to satisfy
@@ -362,11 +325,12 @@ fn Map(comptime T: type) type {
 
             for (0..tries) |_| {
                 const in_front: Coord(T) = switch (self.guard.facing) {
-                    .North => try self.guard.pos.sub(.{ .y = 1 }),
-                    .East => try self.guard.pos.add(.{ .x = 1 }, bounds),
-                    .South => try self.guard.pos.add(.{ .y = 1 }, bounds),
-                    .West => try self.guard.pos.sub(.{ .x = 1 }),
-                };
+                    .North => self.guard.pos.subPos(.{ .y = 1 }),
+                    .East => self.guard.pos.addBound(.{ .x = 1 }, bounds),
+                    .South => self.guard.pos.addBound(.{ .y = 1 }, bounds),
+                    .West => self.guard.pos.subPos(.{ .x = 1 }),
+                } orelse return error.OutOfBounds;
+
                 switch (self.obstacles.contains(in_front)) {
                     false => return,
                     true => self.guard.facing.turnRight(),

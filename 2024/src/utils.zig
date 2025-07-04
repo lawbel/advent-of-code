@@ -64,3 +64,61 @@ pub fn GridUnmanaged(comptime T: type) type {
         }
     };
 }
+
+/// A coordinate - a position `(x, y)`.
+pub fn Coord(comptime T: type) type {
+    return struct {
+        const Self = @This();
+
+        x: T = 0,
+        y: T = 0,
+
+        /// Add two coordinates together.
+        pub fn add(self: Self, other: Self) Self {
+            return .{
+                .x = self.x + other.x,
+                .y = self.y + other.y,
+            };
+        }
+
+        /// Add two coordinates together. Returns null if the result
+        /// would go beyond the given bounds.
+        pub fn addBound(self: Self, other: Self, bounds: Self) ?Self {
+            const new = self.add(other);
+            if (new.x >= bounds.x or new.y >= bounds.y) return null;
+            return new;
+        }
+
+        /// Add two coordinates together. Returns null if the result
+        /// would go beyond the given bounds, or go into negative coordinates.
+        pub fn addBoundPos(self: Self, other: Self, bounds: Self) ?Self {
+            const new = self.addBound(other, bounds) orelse return null;
+            if (new.x < 0 or new.y < 0) return null;
+            return new;
+        }
+
+        /// Subtract one coordinate from another.
+        pub fn sub(self: Self, other: Self) Self {
+            return .{
+                .x = self.x - other.x,
+                .y = self.y - other.y,
+            };
+        }
+
+        /// Subtract one coordinate from another. Returns null if the
+        /// result would go into negative coordinates.
+        pub fn subPos(self: Self, other: Self) ?Self {
+            if (self.x < other.x or self.y < other.y) return null;
+            return self.sub(other);
+        }
+
+        /// Cast `x` and `y` coordinates to a new type. Returns null if
+        /// either value doesn't fit.
+        pub fn cast(self: Self, comptime U: type) ?Coord(U) {
+            return .{
+                .x = std.math.cast(U, self.x) orelse return null,
+                .y = std.math.cast(U, self.y) orelse return null,
+            };
+        }
+    };
+}
