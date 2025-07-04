@@ -13,14 +13,14 @@ pub fn main() !void {
     var equations = try Equations(Int).parse(alloc, lines);
     defer equations.deinit(alloc);
 
-    try stdout.print("part 1: {d}\n", .{try part1(Int, equations)});
-    try stdout.print("part 2: {d}\n", .{try part2(Int, equations)});
+    try stdout.print("part 1: {d}\n", .{part1(Int, equations)});
+    try stdout.print("part 2: {d}\n", .{part2(Int, equations)});
 }
 
 /// Day 7, part 1. Parse the given equations, and work out which ones are
 /// solvable using addition and multiplication. For those equations, sum up
 /// the target values and return the total.
-pub fn part1(comptime T: type, equations: Equations(T)) !T {
+pub fn part1(comptime T: type, equations: Equations(T)) T {
     var total: T = 0;
 
     for (equations.in.items) |equation| {
@@ -34,7 +34,7 @@ pub fn part1(comptime T: type, equations: Equations(T)) !T {
 
 /// Day 7, part 2. Similar to `part1`, but allow concatenation as well as
 /// addition and multiplication.
-pub fn part2(comptime T: type, equations: Equations(T)) !T {
+pub fn part2(comptime T: type, equations: Equations(T)) T {
     var total: T = 0;
 
     for (equations.in.items) |equation| {
