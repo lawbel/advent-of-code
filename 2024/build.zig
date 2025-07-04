@@ -8,12 +8,17 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // For each day in `days`, we hook up a standalone executable and test
-    // suite. We handle the executables and the test suites in separate
-    // for-loops to influence the order they get printed when running
-    // `zig build --help`. The end result is much more readable than we would
-    // get from one loop.
-    const days = [_]u8{ 1, 2, 3, 4, 5, 6, 7 };
+    // For each day in `days = [_]u8{ 1, 2, ..., max }`, we hook up a
+    // standalone executable and test suite. We handle the executables and
+    // the test suites in separate for-loops to influence the order they get
+    // printed when running `zig build --help` or similar. The end result is
+    // much more readable than we would otherwise get.
+    const days = comptime init: {
+        const max = 7;
+        var list: [max]u8 = undefined;
+        for (&list, 1..) |*day, n| day.* = n;
+        break :init list;
+    };
 
     // Provide `zig build main` option that runs each day, one after the
     // other in sequence. We take care to pass all input files via the
