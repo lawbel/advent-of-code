@@ -16,22 +16,6 @@
         "type": "github"
       }
     },
-    "flake-compat_2": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1696426674,
-        "narHash": "sha256-kvjfFW7WAETZlt09AgDn1MrtKzP7t90Vf7vypd3OL1U=",
-        "owner": "edolstra",
-        "repo": "flake-compat",
-        "rev": "0f9255e01c2351cc7d116c072cb317785dd33b33",
-        "type": "github"
-      },
-      "original": {
-        "owner": "edolstra",
-        "repo": "flake-compat",
-        "type": "github"
-      }
-    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -107,16 +91,15 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1720535198,
-        "narHash": "sha256-zwVvxrdIzralnSbcpghA92tWu2DV2lwv89xZc8MTrbg=",
-        "owner": "NixOS",
+        "lastModified": 1751633078,
+        "narHash": "sha256-6V8vfZnKmcFuLrXzbUcVzF9bUmuacLW+xCFvIs4daFQ=",
+        "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "205fd4226592cc83fd4c0885a3e4c9c400efabb5",
+        "rev": "3f03e8984ecade43ac14e7af260fa7c986e3a87f",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-23.11",
+        "owner": "nixos",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -176,27 +159,26 @@
     },
     "zig": {
       "inputs": {
-        "flake-compat": "flake-compat",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1748910941,
-        "narHash": "sha256-DFyky7QV+YzLSNxs6PoSfdswugNABVMAibWmkyxJr38=",
-        "owner": "mitchellh",
-        "repo": "zig-overlay",
-        "rev": "892777bf50e6066200c2c8cffcb16d46aed83af6",
+        "lastModified": 1751594103,
+        "narHash": "sha256-wJ0Qo/4qJ3drONoS7caNHKYqM5i36N/lqO+4fcYouvg=",
+        "owner": "cloudef",
+        "repo": "zig2nix",
+        "rev": "e9d38730dbe3eaa26017ff08678e95cc04833e8c",
         "type": "github"
       },
       "original": {
-        "owner": "mitchellh",
-        "repo": "zig-overlay",
+        "owner": "cloudef",
+        "repo": "zig2nix",
         "type": "github"
       }
     },
     "zig-overlay": {
       "inputs": {
-        "flake-compat": "flake-compat_2",
+        "flake-compat": "flake-compat",
         "flake-utils": "flake-utils_2",
         "nixpkgs": [
           "zls",
