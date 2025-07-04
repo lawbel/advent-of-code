@@ -15,7 +15,7 @@ pub const max_input_file_bytes = 1_000_000;
 /// binary directly, pass it the absolute path to the text file
 /// yourself - something like the below would do.
 ///
-/// ```shell
+/// ```sh
 /// ZIG_AOC_DAY_01=$(realpath ./txt/day_01.txt) ./zig-out/bin/day-01
 /// ```
 ///
@@ -40,19 +40,20 @@ pub fn GridUnmanaged(comptime T: type) type {
     return struct {
         const Self = @This();
 
+        /// The wrapped data.
+        inner: Inner,
+
         /// The inner type, an array of arrays.
         pub const Inner = std.ArrayListUnmanaged(std.ArrayListUnmanaged(T));
 
-        /// The wrapped data.
-        inner: Inner,
+        /// Initialize to an empty grid.
+        pub const empty: Self = .{ .inner = .empty };
 
         /// Initialize to an empty grid with capacity for `num` rows. Caller
         /// owns the returned memory, which can be freed using
         /// the `.deinit(...)` method.
         pub fn initRowCapacity(alloc: std.mem.Allocator, num: usize) !Self {
-            return .{
-                .inner = try Inner.initCapacity(alloc, num),
-            };
+            return .{ .inner = try Inner.initCapacity(alloc, num) };
         }
 
         /// Frees the grid - free each array within the outer array, and then
