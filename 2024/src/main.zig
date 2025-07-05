@@ -13,12 +13,7 @@ const std = @import("std");
 /// Run each day, one after the other.
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
-
-    // Even if each day has a different error union that it can return, it is
-    // still okay to combine them in an array like this - as long as they all
-    // are of the form `fn () ...!void` they can be unified to a common type.
-    const MainType = @TypeOf(main);
-    const mains = [_]MainType{
+    const mains = [_]fn () anyerror!void{
         day_01.main, day_02.main, day_03.main, day_04.main, day_05.main,
         day_06.main, day_07.main, day_08.main, day_09.main,
     };
