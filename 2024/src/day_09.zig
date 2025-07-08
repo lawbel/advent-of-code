@@ -9,12 +9,24 @@ pub fn main() !void {
     const disk = try utils.getInputFile(alloc, 9);
     defer alloc.free(disk);
 
-    const checksum = try part1(alloc, disk);
-    try stdout.print("part 1: {d}\n", .{checksum});
+    const checksum1 = try part1(alloc, disk);
+    try stdout.print("part 1: {d}\n", .{checksum1});
+
+    const checksum2 = try part2(alloc, disk);
+    try stdout.print("part 2: {d}\n", .{checksum2});
 }
 
-/// Day 9, part 1 - parse the disk, defrag the drive, and compute its checksum.
+/// Day 9, part 1 - parse the disk, compact the drive, and compute its checksum.
 pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u64 {
+    var disk = try Disk(u64).parse(alloc, text);
+    defer disk.deinit(alloc);
+
+    disk.compact();
+    return disk.checksum();
+}
+
+/// Day 9, part 2 - parse the disk, defrag the drive, and compute its checksum.
+pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u64 {
     var disk = try Disk(u64).parse(alloc, text);
     defer disk.deinit(alloc);
 
@@ -22,8 +34,8 @@ pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u64 {
     return disk.checksum();
 }
 
-/// A disk - a collection of storage blocks, each containing either a file `T`
-/// or empty space (null).
+/// A disk - a collection of storage blocks, each containing either a file
+/// segment `T` or empty space `null`.
 fn Disk(comptime T: type) type {
     return struct {
         const Self = @This();
@@ -32,10 +44,10 @@ fn Disk(comptime T: type) type {
 
         /// Parse disk from string. Extraneous whitespace is ignored.
         fn parse(alloc: std.mem.Allocator, text: []const u8) !Self {
+            const State = union(enum) { file, space };
             const len = text.len;
             if (len == 0) return error.NoInput;
 
-            const State = union(enum) { file, space };
             var n: usize = 0;
             var id: T = 0;
             var map: std.ArrayListUnmanaged(?T) = .empty;
@@ -43,26 +55,24 @@ fn Disk(comptime T: type) type {
 
             loop: switch (State.file) {
                 .file => {
-                    var digit: bool = false;
-                    if (std.fmt.charToDigit(text[n], 10)) |blocks| {
-                        try map.appendNTimes(alloc, id, blocks);
-                        digit = true;
-                        id += 1;
-                    } else |_| {}
-
                     n += 1;
-                    if (n < len) continue :loop if (digit) .space else .file;
+                    if (std.fmt.charToDigit(text[n - 1], 10)) |blocks| {
+                        try map.appendNTimes(alloc, id, blocks);
+                        id += 1;
+                        if (n < len) continue :loop .space;
+                    } else |_| {
+                        if (n < len) continue :loop .file;
+                    }
                 },
 
                 .space => {
-                    var digit: bool = false;
-                    if (std.fmt.charToDigit(text[n], 10)) |free| {
-                        try map.appendNTimes(alloc, null, free);
-                        digit = true;
-                    } else |_| {}
-
                     n += 1;
-                    if (n < len) continue :loop if (digit) .file else .space;
+                    if (std.fmt.charToDigit(text[n - 1], 10)) |free| {
+                        try map.appendNTimes(alloc, null, free);
+                        if (n < len) continue :loop .file;
+                    } else |_| {
+                        if (n < len) continue :loop .space;
+                    }
                 },
             }
 
@@ -79,19 +89,86 @@ fn Disk(comptime T: type) type {
             return self.map.pop() orelse null;
         }
 
-        /// Shrink the end of the disk - pop all trailing `null`s.
-        fn shrink(self: *Self) void {
-            var len: usize = self.map.items.len;
-            while (len > 0) : (len -= 1) {
-                if (self.map.items[len - 1] != null) break;
+        /// Get the start index of the file ending just before `stop`. So this
+        /// file occupies the slice `self.map.items[start..stop]`.
+        fn fileStart(self: Self, stop: usize) !usize {
+            if (stop > self.map.items.len) return error.OutOfBounds;
+            const id = self.map.items[stop - 1] orelse return error.FileIsNull;
+
+            var n: usize = stop;
+            while (n > 0) : (n -= 1) {
+                if (self.map.items[n - 1] != id) break;
             }
-            self.map.shrinkRetainingCapacity(len);
+
+            return n;
         }
 
-        /// Defragment the disk - pop elements from the end, and move them into
-        /// available empty slots. Continue this process until the whole disk
-        /// is one contiguous block of files.
+        /// Find the previous file - iterate backwards from `pos` searching for
+        /// any file with ID smaller than `id`, or any file at all
+        /// if `id == null`. Returns the next index `n`, so that the file
+        /// found occupies a slice like `self.map.items[?? .. n]`.
+        fn prevFile(self: Self, pos: usize, id: ?T) ?usize {
+            if (pos > self.map.items.len) return null;
+
+            var n: usize = pos;
+            while (n > 0) : (n -= 1) {
+                const file = self.map.items[n - 1] orelse continue;
+                if (id == null or file < id.?) return n;
+            }
+
+            return null;
+        }
+
+        /// Finds a contiguous section of free (null) memory of length `len`
+        /// and returns the starting index. If a limit is given search within
+        /// the range `self.map.items[0..limit]`, otherwise search the entire
+        /// disk `self.map.items`.
+        fn freeSpace(self: Self, len: usize, limit: ?usize) ?usize {
+            const items = self.map.items.len;
+            const size = if (limit) |lim| @min(lim, items) else items;
+
+            var start: usize = 0;
+            while (start + len <= size) : (start += 1) {
+                const slice = self.map.items[start .. start + len];
+                if (std.mem.allEqual(?T, slice, null)) return start;
+            }
+
+            return null;
+        }
+
+        /// Defragment the disk:
+        ///
+        /// * move the last file on disk to available free (null) space at
+        ///   the front of the disk;
+        /// * if there isn't a big enough section of free memory to accomodate
+        ///   the file, leave it as-is;
+        /// * repeat this process, iterating through every file from the back
+        ///   of the disk all the way to front.
+        ///
+        /// We take care not to move the same file more than once.
         fn defrag(self: *Self) void {
+            self.shrink();
+
+            var stop = self.map.items.len;
+            while (stop > 0) {
+                const id = self.map.items[stop - 1] orelse unreachable;
+                const start = self.fileStart(stop) catch unreachable;
+                const size = stop - start;
+
+                if (self.freeSpace(size, start)) |free| {
+                    @memset(self.map.items[free .. free + size], id);
+                    @memset(self.map.items[start..stop], null);
+                }
+                stop = self.prevFile(start, id) orelse 0;
+            }
+
+            self.shrink();
+        }
+
+        /// Compact the disk - pop elements from the end, and move them into
+        /// available empty slots. Continue this process until the whole disk
+        /// is one contiguous array of files.
+        fn compact(self: *Self) void {
             self.shrink();
 
             var i: usize = 0;
@@ -101,6 +178,12 @@ fn Disk(comptime T: type) type {
                     self.shrink();
                 }
             }
+        }
+
+        /// Shrink the end of the disk - pop all trailing `null`s.
+        fn shrink(self: *Self) void {
+            const len = self.prevFile(self.map.items.len, null) orelse 0;
+            self.map.shrinkRetainingCapacity(len);
         }
 
         /// Calculate a file-system checksum.
@@ -145,18 +228,19 @@ test "Disk.parse(large)" {
     try std.testing.expectEqualSlices(?Int, &expected, disk.map.items);
 }
 
-test "Disk.defrag(small)" {
+test "Disk.compact(small)" {
     const alloc = std.testing.allocator;
     const Int = i64;
     const expected = [_]?Int{ 0, 2, 2, 1, 1, 1, 2, 2, 2 };
 
     var disk = try Disk(Int).parse(alloc, example_disk_small);
     defer disk.deinit(alloc);
-    disk.defrag();
+
+    disk.compact();
     try std.testing.expectEqualSlices(?Int, &expected, disk.map.items);
 }
 
-test "Disk.defrag(large)" {
+test "Disk.compact(large)" {
     const alloc = std.testing.allocator;
     const Int = i32;
     const expected = [_]?Int{
@@ -166,16 +250,65 @@ test "Disk.defrag(large)" {
 
     var disk = try Disk(Int).parse(alloc, example_disk_large);
     defer disk.deinit(alloc);
-    disk.defrag();
+
+    disk.compact();
     try std.testing.expectEqualSlices(?Int, &expected, disk.map.items);
+    try std.testing.expectEqual(1928, disk.checksum());
 }
 
-test "Disk.checksum(large)" {
+test "Disk.fileStart(large)" {
     const alloc = std.testing.allocator;
-    var disk = try Disk(i16).parse(alloc, example_disk_large);
+    const Int = u32;
+    const id: Int = 9;
+    const size: usize = 2;
+    const slice: [size]?Int = .{id} ** size;
+
+    var disk = try Disk(Int).parse(alloc, example_disk_large);
     defer disk.deinit(alloc);
+
+    const stop = disk.map.items.len;
+    const start = try disk.fileStart(stop);
+    const file = disk.map.items[start..stop];
+    try std.testing.expectEqual(stop - size, start);
+    try std.testing.expectEqualSlices(?Int, &slice, file);
+}
+
+test "Disk.freeSpace(small)" {
+    const alloc = std.testing.allocator;
+    var disk = try Disk(usize).parse(alloc, example_disk_small);
+    defer disk.deinit(alloc);
+
+    try std.testing.expectEqual(null, disk.freeSpace(5, null));
+    try std.testing.expectEqual(6, disk.freeSpace(4, null));
+    try std.testing.expectEqual(6, disk.freeSpace(3, null));
+    try std.testing.expectEqual(1, disk.freeSpace(2, null));
+}
+
+test "Disk.freeSpace(large)" {
+    const alloc = std.testing.allocator;
+    var disk = try Disk(u64).parse(alloc, example_disk_large);
+    defer disk.deinit(alloc);
+
+    try std.testing.expectEqual(null, disk.freeSpace(4, null));
+    try std.testing.expectEqual(2, disk.freeSpace(3, null));
+}
+
+test "Disk.defrag(large)" {
+    const alloc = std.testing.allocator;
+    const Int = usize;
+    const expected = [_]?Int{
+        0,    0,    9,    9,    2,    1,    1,    1, 7,    7,
+        7,    null, 4,    4,    null, 3,    3,    3, null, null,
+        null, null, 5,    5,    5,    5,    null, 6, 6,    6,
+        6,    null, null, null, null, null, 8,    8, 8,    8,
+    };
+
+    var disk = try Disk(Int).parse(alloc, example_disk_large);
+    defer disk.deinit(alloc);
+
     disk.defrag();
-    try std.testing.expectEqual(1928, disk.checksum());
+    try std.testing.expectEqualSlices(?Int, &expected, disk.map.items);
+    try std.testing.expectEqual(2858, disk.checksum());
 }
 
 /// A small example of a disk map.
