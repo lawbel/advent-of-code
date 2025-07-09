@@ -4,20 +4,11 @@ const utils = @import("utils.zig");
 
 /// Run both parts for day 1.
 pub fn main() !void {
-    const alloc = std.heap.smp_allocator;
-    const stdout = std.io.getStdOut().writer();
-    const list = try utils.getInputFile(alloc, 1);
-    defer alloc.free(list);
-
-    const val1: u32 = try part1(alloc, list);
-    try stdout.print("part 1: {d}\n", .{val1});
-
-    const val2: u32 = try part2(alloc, list);
-    try stdout.print("part 2: {d}\n", .{val2});
+    try utils.mainDay(1, part1, part2);
 }
 
 /// Day 1, part 1.
-pub fn part1(alloc: std.mem.Allocator, list: []const u8) !u32 {
+pub fn part1(alloc: std.mem.Allocator, list: []const u8) !u64 {
     // Parse both lists.
     const pair = try parseListPair(alloc, list);
     var left = pair[0];
@@ -26,11 +17,11 @@ pub fn part1(alloc: std.mem.Allocator, list: []const u8) !u32 {
     defer right.deinit(alloc);
 
     // Sort both lists in ascending order.
-    std.sort.pdq(u32, left.items, {}, std.sort.asc(u32));
-    std.sort.pdq(u32, right.items, {}, std.sort.asc(u32));
+    std.sort.pdq(u64, left.items, {}, std.sort.asc(u64));
+    std.sort.pdq(u64, right.items, {}, std.sort.asc(u64));
 
     // Sum up the distances and return.
-    var differences: u32 = 0;
+    var differences: u64 = 0;
 
     std.debug.assert(left.items.len == right.items.len);
     for (left.items, right.items) |l, r| {
@@ -47,7 +38,7 @@ test part1 {
 }
 
 /// Day 1, part 2.
-pub fn part2(alloc: std.mem.Allocator, list: []const u8) !u32 {
+pub fn part2(alloc: std.mem.Allocator, list: []const u8) !u64 {
     // Parse both lists.
     const pair = try parseListPair(alloc, list);
     var left = pair[0];
@@ -56,7 +47,7 @@ pub fn part2(alloc: std.mem.Allocator, list: []const u8) !u32 {
     defer right.deinit(alloc);
 
     // Count numbers in the right list in advance.
-    var counts = std.AutoHashMapUnmanaged(u32, u32).empty;
+    var counts = std.AutoHashMapUnmanaged(u64, u64).empty;
     defer counts.deinit(alloc);
 
     for (right.items) |r| {
@@ -65,7 +56,7 @@ pub fn part2(alloc: std.mem.Allocator, list: []const u8) !u32 {
     }
 
     // Multiply each entry in `left` by its occurrences in `right`, and sum up.
-    var similarity: u32 = 0;
+    var similarity: u64 = 0;
 
     for (left.items) |l| {
         const count = counts.get(l) orelse 0;
@@ -86,12 +77,12 @@ fn parseListPair(
     alloc: std.mem.Allocator,
     list: []const u8,
 ) !struct {
-    std.ArrayListUnmanaged(u32),
-    std.ArrayListUnmanaged(u32),
+    std.ArrayListUnmanaged(u64),
+    std.ArrayListUnmanaged(u64),
 } {
     // Pre-allocate room for the number of lines in the input. Should save us
     // from any need to re-allocate.
-    const Vec = std.ArrayListUnmanaged(u32);
+    const Vec = std.ArrayListUnmanaged(u64);
     const assumed_len = std.mem.count(u8, list, "\n") + 1;
 
     var left = try Vec.initCapacity(alloc, assumed_len);
@@ -114,8 +105,8 @@ fn parseListPair(
         std.debug.assert(words.next() == null);
 
         // Parse the numbers and add them to each list.
-        const num1 = try std.fmt.parseInt(u32, word1, 10);
-        const num2 = try std.fmt.parseInt(u32, word2, 10);
+        const num1 = try std.fmt.parseInt(u64, word1, 10);
+        const num2 = try std.fmt.parseInt(u64, word2, 10);
 
         try left.append(alloc, num1);
         try right.append(alloc, num2);
@@ -126,15 +117,15 @@ fn parseListPair(
 
 test parseListPair {
     const alloc = std.testing.allocator;
-    const lefts: [6]u32 = .{ 3, 4, 2, 1, 3, 3 };
-    const rights: [6]u32 = .{ 4, 3, 5, 3, 9, 3 };
+    const lefts: [6]u64 = .{ 3, 4, 2, 1, 3, 3 };
+    const rights: [6]u64 = .{ 4, 3, 5, 3, 9, 3 };
 
     var pair = try parseListPair(alloc, example_list);
     defer pair[0].deinit(alloc);
     defer pair[1].deinit(alloc);
 
-    try std.testing.expectEqualSlices(u32, pair[0].items, &lefts);
-    try std.testing.expectEqualSlices(u32, pair[1].items, &rights);
+    try std.testing.expectEqualSlices(u64, pair[0].items, &lefts);
+    try std.testing.expectEqualSlices(u64, pair[1].items, &rights);
 }
 
 /// The example for day 1.

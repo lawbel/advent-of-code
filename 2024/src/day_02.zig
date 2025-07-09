@@ -4,25 +4,16 @@ const utils = @import("utils.zig");
 
 /// Run both parts for day 2.
 pub fn main() !void {
-    const alloc = std.heap.smp_allocator;
-    const stdout = std.io.getStdOut().writer();
-    const reports = try utils.getInputFile(alloc, 2);
-    defer alloc.free(reports);
-
-    const count1 = try part1(alloc, reports);
-    try stdout.print("part 1: {d}\n", .{count1});
-
-    const count2 = try part2(alloc, reports);
-    try stdout.print("part 2: {d}\n", .{count2});
+    try utils.mainDay(2, part1, part2);
 }
 
 /// Day 2, part 1.
-pub fn part1(alloc: std.mem.Allocator, reports: []const u8) !u32 {
+pub fn part1(alloc: std.mem.Allocator, reports: []const u8) !u64 {
     return countSafe(alloc, reports, std.sort.isSorted);
 }
 
 /// Day 2, part 2.
-pub fn part2(alloc: std.mem.Allocator, reports: []const u8) !u32 {
+pub fn part2(alloc: std.mem.Allocator, reports: []const u8) !u64 {
     return countSafe(alloc, reports, isApproxSorted);
 }
 
@@ -43,11 +34,11 @@ fn countSafe(
     alloc: std.mem.Allocator,
     reports: []const u8,
     comptime isSorted: @TypeOf(std.sort.isSorted),
-) !u32 {
+) !u64 {
     var list = try parseReports(alloc, reports);
     defer list.deinit(alloc);
 
-    var safe: u32 = 0;
+    var safe: u64 = 0;
     for (list.inner.items) |report| {
         safe += if (reportIsSafe(report.items, isSorted)) 1 else 0;
     }
@@ -77,11 +68,11 @@ fn slowDesc(comptime T: type) fn (void, T, T) bool {
 
 /// Is the given report safe or not?
 fn reportIsSafe(
-    report: []const u32,
+    report: []const u64,
     comptime isSorted: @TypeOf(std.sort.isSorted),
 ) bool {
-    const slow_asc = isSorted(u32, report, {}, slowAsc(u32));
-    const slow_desc = isSorted(u32, report, {}, slowDesc(u32));
+    const slow_asc = isSorted(u64, report, {}, slowAsc(u64));
+    const slow_desc = isSorted(u64, report, {}, slowDesc(u64));
     return slow_asc or slow_desc;
 }
 
@@ -205,9 +196,9 @@ test isApproxSorted {
     var actual: [expected.len]Result = undefined;
     try std.testing.expectEqual(actual.len, reports.inner.items.len);
     for (reports.inner.items, 0..) |report, i| {
-        if (isApproxSorted(u32, report.items, {}, slowAsc(u32))) {
+        if (isApproxSorted(u64, report.items, {}, slowAsc(u64))) {
             actual[i] = .SlowAsc;
-        } else if (isApproxSorted(u32, report.items, {}, slowDesc(u32))) {
+        } else if (isApproxSorted(u64, report.items, {}, slowDesc(u64))) {
             actual[i] = .SlowDesc;
         } else {
             actual[i] = .NotSorted;
@@ -222,14 +213,14 @@ test isApproxSorted {
 fn parseReports(
     alloc: std.mem.Allocator,
     string: []const u8,
-) !utils.GridUnmanaged(u32) {
+) !utils.GridUnmanaged(u64) {
     // Pre-allocate room for the number of lines in the input. Should save us
     // from re-allocating much if at all.
     const assumed_len = std.mem.count(u8, string, "\n") + 1;
-    const Mat32 = utils.GridUnmanaged(u32);
-    const Vec32 = std.ArrayListUnmanaged(u32);
+    const Mat64 = utils.GridUnmanaged(u64);
+    const Vec64 = std.ArrayListUnmanaged(u64);
 
-    var report = try Mat32.initRowCapacity(alloc, assumed_len);
+    var report = try Mat64.initRowCapacity(alloc, assumed_len);
     errdefer report.deinit(alloc);
 
     // Iterate over each input row.
@@ -240,12 +231,12 @@ fn parseReports(
 
         // Add a new report to the list.
         var new = try report.inner.addOne(alloc);
-        new.* = Vec32.empty;
+        new.* = Vec64.empty;
 
         // Populate that report with each entry.
         var words = std.mem.tokenizeScalar(u8, line, ' ');
         while (words.next()) |word| {
-            const val = try std.fmt.parseInt(u32, word, 10);
+            const val = try std.fmt.parseInt(u64, word, 10);
             try new.append(alloc, val);
         }
     }
@@ -255,7 +246,7 @@ fn parseReports(
 
 test parseReports {
     const alloc = std.testing.allocator;
-    const expected: [6][5]u32 = .{
+    const expected: [6][5]u64 = .{
         .{ 7, 6, 4, 2, 1 },
         .{ 1, 2, 7, 8, 9 },
         .{ 9, 7, 6, 2, 1 },
@@ -269,7 +260,7 @@ test parseReports {
 
     for (expected, 0..) |row, i| {
         const actual = reports.inner.items[i].items;
-        try std.testing.expectEqualSlices(u32, &row, actual);
+        try std.testing.expectEqualSlices(u64, &row, actual);
     }
 }
 

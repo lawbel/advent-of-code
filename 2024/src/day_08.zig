@@ -5,22 +5,13 @@ const Coord = utils.Coord;
 
 /// Run both parts for day 8.
 pub fn main() !void {
-    const alloc = std.heap.smp_allocator;
-    const stdout = std.io.getStdOut().writer();
-    const map = try utils.getInputFile(alloc, 8);
-    defer alloc.free(map);
-
-    const locations = try part1(alloc, map);
-    try stdout.print("part 1: {d}\n", .{locations});
-
-    const harmonic = try part2(alloc, map);
-    try stdout.print("part 2: {d}\n", .{harmonic});
+    try utils.mainDay(8, part1, part2);
 }
 
 /// Day 8, part 1. Parse the map, grouping together antennae of the same
 /// frequency. Then iterate over all pairs of antennae to map out all
 /// antinodes, and count them up.
-pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u32 {
+pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u64 {
     var map = try Map.parse(alloc, text);
     defer map.deinit(alloc);
     return map.numAntinodes(alloc);
@@ -28,7 +19,7 @@ pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u32 {
 
 /// Day 8, part 2 - the same as part 1, except that we count the antinodes
 /// harmonically.
-pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u32 {
+pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u64 {
     var map = try Map.parse(alloc, text);
     defer map.deinit(alloc);
     return map.numAntinodesHarmonic(alloc);
@@ -73,7 +64,7 @@ const Map = struct {
     height: usize,
 
     /// Count the number of antinodes within the bounds of the map.
-    fn numAntinodes(self: Self, alloc: std.mem.Allocator) !u32 {
+    fn numAntinodes(self: Self, alloc: std.mem.Allocator) !u64 {
         var antinodes: std.AutoHashMapUnmanaged(Coord(isize), void) = .empty;
         defer antinodes.deinit(alloc);
 
@@ -108,7 +99,7 @@ const Map = struct {
 
     /// Count the number of antinodes within the bounds of the map, taking into
     /// account the effect of resonant harmonics.
-    fn numAntinodesHarmonic(self: Self, alloc: std.mem.Allocator) !u32 {
+    fn numAntinodesHarmonic(self: Self, alloc: std.mem.Allocator) !u64 {
         var antinodes: std.AutoHashMapUnmanaged(Coord(isize), void) = .empty;
         defer antinodes.deinit(alloc);
 

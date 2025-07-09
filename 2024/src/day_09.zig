@@ -4,16 +4,7 @@ const utils = @import("utils.zig");
 
 /// Run both parts for day 9.
 pub fn main() !void {
-    const alloc = std.heap.smp_allocator;
-    const stdout = std.io.getStdOut().writer();
-    const disk = try utils.getInputFile(alloc, 9);
-    defer alloc.free(disk);
-
-    const checksum1 = try part1(alloc, disk);
-    try stdout.print("part 1: {d}\n", .{checksum1});
-
-    const checksum2 = try part2(alloc, disk);
-    try stdout.print("part 2: {d}\n", .{checksum2});
+    try utils.mainDay(9, part1, part2);
 }
 
 /// Day 9, part 1 - parse the disk, compact the drive, and compute its checksum.

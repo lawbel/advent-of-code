@@ -4,30 +4,24 @@ const utils = @import("utils.zig");
 
 /// Run both parts for day 3.
 pub fn main() !void {
-    const alloc = std.heap.smp_allocator;
-    const stdout = std.io.getStdOut().writer();
-    const memory = try utils.getInputFile(alloc, 3);
-    defer alloc.free(memory);
-
-    try stdout.print("part 1: {d}\n", .{part1(memory)});
-    try stdout.print("part 2: {d}\n", .{part2(memory)});
+    try utils.mainDay(3, part1, part2);
 }
 
 /// Day 3, part 1.
-pub fn part1(memory: []const u8) u32 {
+pub fn part1(_: std.mem.Allocator, memory: []const u8) !u64 {
     return sumValidMulExprs(memory, .Ignore);
 }
 
 /// Day 3, part 2.
-pub fn part2(memory: []const u8) u32 {
+pub fn part2(_: std.mem.Allocator, memory: []const u8) !u64 {
     return sumValidMulExprs(memory, .Handle);
 }
 
 /// Iterate over every `MulExpr` in the given `memory`, calculating the result
 /// of the multiplication and adding it to a running total.
-fn sumValidMulExprs(memory: []const u8, comptime cond: Conditionals) u32 {
+fn sumValidMulExprs(memory: []const u8, comptime cond: Conditionals) u64 {
     var muls = validMulExprs(memory, cond);
-    var total: u32 = 0;
+    var total: u64 = 0;
 
     while (muls.next()) |mul| {
         total += mul.left * mul.right;
@@ -37,15 +31,17 @@ fn sumValidMulExprs(memory: []const u8, comptime cond: Conditionals) u32 {
 }
 
 test part1 {
-    try std.testing.expectEqual(161, part1(example_mem_1));
+    const total = sumValidMulExprs(example_mem_1, .Ignore);
+    try std.testing.expectEqual(161, total);
 }
 
 test part2 {
-    try std.testing.expectEqual(48, part2(example_mem_2));
+    const total = sumValidMulExprs(example_mem_2, .Handle);
+    try std.testing.expectEqual(48, total);
 }
 
 /// A multiplication expression like `mul(1,2)`.
-const MulExpr = struct { left: u32, right: u32 };
+const MulExpr = struct { left: u64, right: u64 };
 
 /// Whether or not to handled `do()` and `don't()` expressions.
 const Conditionals = union(enum) { Handle, Ignore };
@@ -116,7 +112,7 @@ fn MulIterator(comptime cond: Conditionals) type {
                 const first = self.memory[i .. i + mul.len + 4];
                 const comma = indexOf(u8, first, mul.len, ',') orelse continue;
                 const num_l = self.memory[i + mul.len .. i + comma];
-                const left = parseUnsigned(u32, num_l, 10) catch continue;
+                const left = parseUnsigned(u64, num_l, 10) catch continue;
                 index.* += num_l.len + 1;
 
                 // End with '...)' string, 1-3 chars before ')' allowed.
@@ -125,7 +121,7 @@ fn MulIterator(comptime cond: Conditionals) type {
                 const second = self.memory[i..close_paren];
                 const close = indexOf(u8, second, comma, ')') orelse continue;
                 const num_r = self.memory[i + comma + 1 .. i + close];
-                const right = parseUnsigned(u32, num_r, 10) catch continue;
+                const right = parseUnsigned(u64, num_r, 10) catch continue;
                 index.* += num_r.len + 1;
 
                 // If we succeeded, return the `MulExpr` leaving `self` ready

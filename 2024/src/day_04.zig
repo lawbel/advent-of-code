@@ -4,23 +4,14 @@ const utils = @import("utils.zig");
 
 /// Run both parts for day 4.
 pub fn main() !void {
-    const alloc = std.heap.smp_allocator;
-    const stdout = std.io.getStdOut().writer();
-    const word = try utils.getInputFile(alloc, 4);
-    defer alloc.free(word);
-
-    var search = try asGrid(alloc, u8, word, '\n');
-    defer search.deinit(alloc);
-
-    const count1 = try part1(alloc, search);
-    try stdout.print("part 1: {d}\n", .{count1});
-
-    const count2 = part2(search);
-    try stdout.print("part 2: {d}\n", .{count2});
+    try utils.mainDay(4, part1, part2);
 }
 
 /// Day 4, part 1.
-pub fn part1(alloc: std.mem.Allocator, search: utils.GridUnmanaged(u8)) !u32 {
+pub fn part1(alloc: std.mem.Allocator, word: []const u8) !u64 {
+    var search = try asGrid(alloc, u8, word, '\n');
+    defer search.deinit(alloc);
+
     // Every way of making lines through the word search.
     var n_east = try gridDiags(alloc, u8, .NorthEast, &search);
     defer n_east.deinit(alloc);
@@ -49,21 +40,20 @@ pub fn part1(alloc: std.mem.Allocator, search: utils.GridUnmanaged(u8)) !u32 {
         count += std.mem.count(u8, diag_se, "SAMX");
     }
 
-    return @intCast(count);
+    return std.math.cast(u64, count) orelse error.IntCast;
 }
 
 test part1 {
     const alloc = std.testing.allocator;
-
-    var grid = try asGrid(alloc, u8, example_search, '\n');
-    defer grid.deinit(alloc);
-
-    const xmas_count = try part1(alloc, grid);
+    const xmas_count = try part1(alloc, example_search);
     try std.testing.expectEqual(18, xmas_count);
 }
 
 /// Day 4, part 2.
-pub fn part2(search: utils.GridUnmanaged(u8)) u32 {
+pub fn part2(alloc: std.mem.Allocator, word: []const u8) !u64 {
+    var search = try asGrid(alloc, u8, word, '\n');
+    defer search.deinit(alloc);
+
     var windows = gridWindows(u8, 3, &search);
     var count: usize = 0;
 
@@ -81,16 +71,12 @@ pub fn part2(search: utils.GridUnmanaged(u8)) u32 {
         if (north_east_mas and south_east_mas) count += 1;
     }
 
-    return @intCast(count);
+    return std.math.cast(u64, count) orelse error.IntCast;
 }
 
 test part2 {
     const alloc = std.testing.allocator;
-
-    var grid = try asGrid(alloc, u8, example_search, '\n');
-    defer grid.deinit(alloc);
-
-    const xmas_count = part2(grid);
+    const xmas_count = try part2(alloc, example_search);
     try std.testing.expectEqual(9, xmas_count);
 }
 

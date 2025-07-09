@@ -5,33 +5,24 @@ const Coord = utils.Coord;
 
 /// Run both parts for day 6.
 pub fn main() !void {
-    const alloc = std.heap.smp_allocator;
-    const stdout = std.io.getStdOut().writer();
-    const map = try utils.getInputFile(alloc, 6);
-    defer alloc.free(map);
-
-    const visited = try part1(alloc, map);
-    try stdout.print("part 1: {d}\n", .{visited});
-
-    const loops = try part2(alloc, map);
-    try stdout.print("part 2: {d}\n", .{loops});
+    try utils.mainDay(6, part1, part2);
 }
 
 /// Day 6, part 1 - parse the map, set the guard on patrol and count the total
 /// number of distinct positions they visit before leaving the map.
-pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u32 {
-    var map = try Map(u32).parse(alloc, text);
+pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u64 {
+    var map = try Map(u64).parse(alloc, text);
     defer map.deinit(alloc);
     var path = try map.completePatrol(alloc);
     defer path.deinit(alloc);
 
-    var seen: std.AutoHashMapUnmanaged(Coord(u32), void) = .empty;
+    var seen: std.AutoHashMapUnmanaged(Coord(u64), void) = .empty;
     defer seen.deinit(alloc);
     for (path.items) |step| {
         try seen.put(alloc, step.pos, {});
     }
 
-    return std.math.cast(u32, seen.size) orelse error.IntCastError;
+    return std.math.cast(u64, seen.size) orelse error.IntCastError;
 }
 
 test part1 {
@@ -43,13 +34,13 @@ test part1 {
 /// Day 6, part 2 - parse the map, and analyse the guards patrol route: how
 /// many different positions could a single new obstacle be placed at, in
 /// order to turn that patrol route into a closed loop?
-pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u32 {
-    var map = try Map(u32).parse(alloc, text);
+pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u64 {
+    var map = try Map(u64).parse(alloc, text);
     defer map.deinit(alloc);
     var loops = try map.obstacleLoops(alloc);
     defer loops.deinit(alloc);
 
-    return std.math.cast(u32, loops.count()) orelse error.IntCastError;
+    return std.math.cast(u64, loops.count()) orelse error.IntCastError;
 }
 
 test part2 {

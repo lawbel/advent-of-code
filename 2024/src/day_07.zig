@@ -4,25 +4,17 @@ const utils = @import("utils.zig");
 
 /// Run both parts for day 7.
 pub fn main() !void {
-    const alloc = std.heap.smp_allocator;
-    const stdout = std.io.getStdOut().writer();
-    const lines = try utils.getInputFile(alloc, 7);
-    defer alloc.free(lines);
-
-    const Int = u64;
-    var equations = try Equations(Int).parse(alloc, lines);
-    defer equations.deinit(alloc);
-
-    try stdout.print("part 1: {d}\n", .{part1(Int, equations)});
-    try stdout.print("part 2: {d}\n", .{part2(Int, equations)});
+    try utils.mainDay(7, part1, part2);
 }
 
 /// Day 7, part 1. Parse the given equations, and work out which ones are
 /// solvable using addition and multiplication. For those equations, sum up
 /// the target values and return the total.
-pub fn part1(comptime T: type, equations: Equations(T)) T {
-    var total: T = 0;
+pub fn part1(alloc: std.mem.Allocator, lines: []const u8) !u64 {
+    var equations = try Equations(u64).parse(alloc, lines);
+    defer equations.deinit(alloc);
 
+    var total: u64 = 0;
     for (equations.in.items) |equation| {
         if (equation.hasSolution(AddMul)) {
             total += equation.target;
@@ -34,9 +26,11 @@ pub fn part1(comptime T: type, equations: Equations(T)) T {
 
 /// Day 7, part 2. Similar to `part1`, but allow concatenation as well as
 /// addition and multiplication.
-pub fn part2(comptime T: type, equations: Equations(T)) T {
-    var total: T = 0;
+pub fn part2(alloc: std.mem.Allocator, lines: []const u8) !u64 {
+    var equations = try Equations(u64).parse(alloc, lines);
+    defer equations.deinit(alloc);
 
+    var total: u64 = 0;
     for (equations.in.items) |equation| {
         if (equation.hasSolution(AddMulCat)) {
             total += equation.target;

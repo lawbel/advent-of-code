@@ -9,22 +9,30 @@ const day_07 = @import("day_07.zig");
 const day_08 = @import("day_08.zig");
 const day_09 = @import("day_09.zig");
 const std = @import("std");
+const utils = @import("utils.zig");
 
 /// Run each day, one after the other.
 pub fn main() !void {
+    const alloc = std.heap.smp_allocator;
     const stdout = std.io.getStdOut().writer();
-    const mains = [_]fn () anyerror!void{
-        day_01.main, day_02.main, day_03.main, day_04.main, day_05.main,
-        day_06.main, day_07.main, day_08.main, day_09.main,
+
+    const Day = struct { part1: utils.PartFn, part2: utils.PartFn };
+    const days = [_]@TypeOf(Day){
+        day_01, day_02, day_03, day_04, day_05,
+        day_06, day_07, day_08, day_09,
     };
 
     // Thanks to the above, we can save most of the repetition in running
     // each day. We just have to list the main function in `mains`, and then
     // it gets pulled into this loop.
-    inline for (mains, 1..) |main_fn, day| {
-        if (day > 1) try stdout.print("\n", .{});
-        try stdout.print("> day {d}\n", .{day});
-        try main_fn();
+    inline for (days, 1..) |day, n| {
+        const text = try utils.getInputFile(alloc, n);
+        defer alloc.free(text);
+
+        if (n > 1) try stdout.print("\n", .{});
+        try stdout.print("day {d}:\n", .{n});
+        try stdout.print("  part 1: {d}\n", .{try day.part1(alloc, text)});
+        try stdout.print("  part 2: {d}\n", .{try day.part2(alloc, text)});
     }
 }
 

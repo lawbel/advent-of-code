@@ -4,26 +4,17 @@ const utils = @import("utils.zig");
 
 /// Run both parts for day 5.
 pub fn main() !void {
-    const alloc = std.heap.smp_allocator;
-    const stdout = std.io.getStdOut().writer();
-    const manual = try utils.getInputFile(alloc, 5);
-    defer alloc.free(manual);
-
-    const sum1 = try part1(alloc, manual);
-    try stdout.print("part 1: {d}\n", .{sum1});
-
-    const sum2 = try part2(alloc, manual);
-    try stdout.print("part 2: {d}\n", .{sum2});
+    try utils.mainDay(5, part1, part2);
 }
 
 /// Day 5, part 1.
-pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u32 {
-    var manual = try SafetyManual(u32).parse(alloc, text);
+pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u64 {
+    var manual = try SafetyManual(u64).parse(alloc, text);
     defer manual.deinit(alloc);
 
-    var sum: u32 = 0;
+    var sum: u64 = 0;
     for (manual.updates.inner.items) |update| {
-        if (updateIsLegal(u32, manual.rules, update.items)) {
+        if (updateIsLegal(u64, manual.rules, update.items)) {
             const middle = update.items.len / 2;
             sum += update.items[middle];
         }
@@ -38,17 +29,17 @@ test part1 {
 }
 
 /// Day 5, part 2.
-pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u32 {
-    var manual = try SafetyManual(u32).parse(alloc, text);
+pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u64 {
+    var manual = try SafetyManual(u64).parse(alloc, text);
     defer manual.deinit(alloc);
 
-    var sum: u32 = 0;
+    var sum: u64 = 0;
     for (manual.updates.inner.items) |update| {
-        if (updateIsLegal(u32, manual.rules, update.items)) {
+        if (updateIsLegal(u64, manual.rules, update.items)) {
             continue;
         }
 
-        sortUpdate(u32, manual.rules, update.items);
+        sortUpdate(u64, manual.rules, update.items);
         const middle = update.items.len / 2;
         sum += update.items[middle];
     }

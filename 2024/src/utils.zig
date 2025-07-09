@@ -2,6 +2,20 @@
 //! multiple files.
 const std = @import("std");
 
+/// The expected type of functions `part1` and `part2` for each day.
+pub const PartFn = fn (std.mem.Allocator, []const u8) anyerror!u64;
+
+/// Run both parts for the given day.
+pub fn mainDay(comptime day: u8, part1: PartFn, part2: PartFn) !void {
+    const alloc = std.heap.smp_allocator;
+    const stdout = std.io.getStdOut().writer();
+    const text = try getInputFile(alloc, day);
+    defer alloc.free(text);
+
+    try stdout.print("part 1: {d}\n", .{try part1(alloc, text)});
+    try stdout.print("part 2: {d}\n", .{try part2(alloc, text)});
+}
+
 /// The max size of an input file in bytes.
 pub const max_input_file_bytes = 1_000_000;
 
