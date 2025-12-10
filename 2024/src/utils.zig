@@ -53,35 +53,33 @@ pub fn getInputFile(alloc: std.mem.Allocator, comptime day: u8) ![]u8 {
     return handle.readToEndAlloc(alloc, max_input_file_bytes);
 }
 
-/// An array of arrays, where each array is expected to have the same length.
-/// In other words, it should look like a grid. This invariant is always
-/// expected to hold true for any value of this type. Provides a few helper
-/// methods for convenience.
+/// An array of arrays. It is typically expected for each inner array to have
+/// the same length - a grid. Provides a few helper methods for convenience.
 pub fn GridUnmanaged(comptime T: type) type {
     return struct {
         const Self = @This();
 
         /// The wrapped data.
-        inner: Inner,
+        _0: Inner,
 
         /// The inner type, an array of arrays.
         pub const Inner = std.ArrayListUnmanaged(std.ArrayListUnmanaged(T));
 
         /// Initialize to an empty grid.
-        pub const empty: Self = .{ .inner = .empty };
+        pub const empty: Self = .{ ._0 = .empty };
 
         /// Initialize to an empty grid with capacity for `num` rows. Caller
         /// owns the returned memory, which can be freed using
         /// the `.deinit(...)` method.
         pub fn initRowCapacity(alloc: std.mem.Allocator, num: usize) !Self {
-            return .{ .inner = try Inner.initCapacity(alloc, num) };
+            return .{ ._0 = try Inner.initCapacity(alloc, num) };
         }
 
         /// Frees the grid - free each array within the outer array, and then
         /// free the outer array itself.
         pub fn deinit(self: *Self, alloc: std.mem.Allocator) void {
-            for (self.inner.items) |*arr| arr.deinit(alloc);
-            self.inner.deinit(alloc);
+            for (self._0.items) |*arr| arr.deinit(alloc);
+            self._0.deinit(alloc);
         }
     };
 }

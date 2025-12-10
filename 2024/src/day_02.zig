@@ -39,7 +39,7 @@ fn countSafe(
     defer list.deinit(alloc);
 
     var safe: u64 = 0;
-    for (list.inner.items) |report| {
+    for (list._0.items) |report| {
         safe += if (reportIsSafe(report.items, isSorted)) 1 else 0;
     }
 
@@ -84,7 +84,7 @@ test "reportIsSafe std" {
     defer reports.deinit(alloc);
 
     var actual: [expected.len]bool = undefined;
-    for (reports.inner.items, 0..) |report, i| {
+    for (reports._0.items, 0..) |report, i| {
         actual[i] = reportIsSafe(report.items, std.sort.isSorted);
     }
 
@@ -99,7 +99,7 @@ test "reportIsSafe approx" {
     defer reports.deinit(alloc);
 
     var actual: [expected.len]bool = undefined;
-    for (reports.inner.items, 0..) |report, i| {
+    for (reports._0.items, 0..) |report, i| {
         actual[i] = reportIsSafe(report.items, isApproxSorted);
     }
 
@@ -194,8 +194,8 @@ test isApproxSorted {
     defer reports.deinit(alloc);
 
     var actual: [expected.len]Result = undefined;
-    try std.testing.expectEqual(actual.len, reports.inner.items.len);
-    for (reports.inner.items, 0..) |report, i| {
+    try std.testing.expectEqual(actual.len, reports._0.items.len);
+    for (reports._0.items, 0..) |report, i| {
         if (isApproxSorted(u64, report.items, {}, slowAsc(u64))) {
             actual[i] = .SlowAsc;
         } else if (isApproxSorted(u64, report.items, {}, slowDesc(u64))) {
@@ -230,7 +230,7 @@ fn parseReports(
         if (line.len < 1) continue;
 
         // Add a new report to the list.
-        var new = try report.inner.addOne(alloc);
+        var new = try report._0.addOne(alloc);
         new.* = Vec64.empty;
 
         // Populate that report with each entry.
@@ -259,7 +259,7 @@ test parseReports {
     defer reports.deinit(alloc);
 
     for (expected, 0..) |row, i| {
-        const actual = reports.inner.items[i].items;
+        const actual = reports._0.items[i].items;
         try std.testing.expectEqualSlices(u64, &row, actual);
     }
 }

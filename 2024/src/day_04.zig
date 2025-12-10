@@ -88,7 +88,7 @@ fn gridWindows(
 ) WindowIter(T, dim) {
     return .{
         .grid = grid,
-        .size = grid.inner.items.len,
+        .size = grid._0.items.len,
         .base_x = 0,
         .base_y = 0,
     };
@@ -121,7 +121,7 @@ fn WindowIter(comptime T: type, comptime dim: usize) type {
             // Prepare the current window to be returned.
             var window: [dim][dim]T = undefined;
             inline for (0..dim) |i| {
-                const row_i = self.grid.inner.items[base_y + i];
+                const row_i = self.grid._0.items[base_y + i];
                 const slice_i = row_i.items[base_x..][0..dim];
                 std.mem.copyForwards(T, &window[i], slice_i);
             }
@@ -151,7 +151,7 @@ test "gridWindows(1).len() == size * size" {
     var windows = gridWindows(u8, 1, &grid);
     while (windows.next()) |_| count += 1;
 
-    const grid_size = grid.inner.items.len * grid.inner.items.len;
+    const grid_size = grid._0.items.len * grid._0.items.len;
     try std.testing.expectEqual(grid_size, count);
 }
 
@@ -160,7 +160,7 @@ test "gridWindows(size).len() == 1" {
     var grid = try asGrid(alloc, u8, example_search, '\n');
     defer grid.deinit(alloc);
 
-    try std.testing.expectEqual(10, grid.inner.items.len);
+    try std.testing.expectEqual(10, grid._0.items.len);
     var windows = gridWindows(u8, 10, &grid);
 
     var count: usize = 0;
@@ -189,7 +189,7 @@ test "gridWindows(1) iterates character-wise" {
 
 /// Iterate over the rows in the given grid.
 fn gridRows(comptime T: type, grid: *const utils.GridUnmanaged(T)) RowIter(T) {
-    const size = grid.inner.items.len;
+    const size = grid._0.items.len;
     return .{
         .grid = grid,
         .size = size,
@@ -215,7 +215,7 @@ fn RowIter(comptime T: type) type {
             }
 
             self.row = n + 1;
-            return self.grid.inner.items[n].items;
+            return self.grid._0.items[n].items;
         }
     };
 }
@@ -258,7 +258,7 @@ fn gridColumns(
     comptime T: type,
     grid: *const utils.GridUnmanaged(T),
 ) !ColumnIter(T) {
-    const size = grid.inner.items.len;
+    const size = grid._0.items.len;
     const buffer = try std.ArrayListUnmanaged(T).initCapacity(alloc, size);
 
     return .{
@@ -291,7 +291,7 @@ fn ColumnIter(comptime T: type) type {
             self.col = col + 1;
             self.buffer.clearRetainingCapacity();
             for (0..self.size) |row| {
-                const value = self.grid.inner.items[row].items[col];
+                const value = self.grid._0.items[row].items[col];
                 self.buffer.appendAssumeCapacity(value);
             }
 
@@ -349,7 +349,7 @@ fn gridDiags(
     comptime diag_dir: Direction,
     grid: *const utils.GridUnmanaged(T),
 ) !DiagIter(T, diag_dir) {
-    const size = grid.inner.items.len;
+    const size = grid._0.items.len;
     const buffer = try std.ArrayListUnmanaged(T).initCapacity(alloc, size);
 
     const init_x: usize = 0;
@@ -403,7 +403,7 @@ fn DiagIter(comptime T: type, comptime diag_dir: Direction) type {
             for (0..len) |i| {
                 const slice_x = pos_x + i;
                 const slice_y = pos_y - i;
-                const value = self.grid.inner.items[slice_y].items[slice_x];
+                const value = self.grid._0.items[slice_y].items[slice_x];
                 self.buffer.appendAssumeCapacity(value);
             }
 
@@ -435,7 +435,7 @@ fn DiagIter(comptime T: type, comptime diag_dir: Direction) type {
             for (0..len) |i| {
                 const slice_x = pos_x + i;
                 const slice_y = pos_y + i;
-                const value = self.grid.inner.items[slice_y].items[slice_x];
+                const value = self.grid._0.items[slice_y].items[slice_x];
                 self.buffer.appendAssumeCapacity(value);
             }
 
@@ -563,7 +563,7 @@ fn asGrid(
         var new = try std.ArrayListUnmanaged(T).initCapacity(alloc, row.len);
         errdefer new.deinit(alloc);
         try new.appendSlice(alloc, row);
-        try grid.inner.append(alloc, new);
+        try grid._0.append(alloc, new);
     }
 
     return grid;
@@ -587,8 +587,8 @@ test asGrid {
     var grid = try asGrid(alloc, u8, example_search, '\n');
     defer grid.deinit(alloc);
 
-    try std.testing.expectEqual(as_nested_array.len, grid.inner.items.len);
-    for (as_nested_array, grid.inner.items) |expected, actual| {
+    try std.testing.expectEqual(as_nested_array.len, grid._0.items.len);
+    for (as_nested_array, grid._0.items) |expected, actual| {
         try std.testing.expectEqualSlices(u8, expected, actual.items);
     }
 }

@@ -13,7 +13,7 @@ pub fn part1(alloc: std.mem.Allocator, text: []const u8) !u64 {
     defer manual.deinit(alloc);
 
     var sum: u64 = 0;
-    for (manual.updates.inner.items) |update| {
+    for (manual.updates._0.items) |update| {
         if (updateIsLegal(u64, manual.rules, update.items)) {
             const middle = update.items.len / 2;
             sum += update.items[middle];
@@ -34,7 +34,7 @@ pub fn part2(alloc: std.mem.Allocator, text: []const u8) !u64 {
     defer manual.deinit(alloc);
 
     var sum: u64 = 0;
-    for (manual.updates.inner.items) |update| {
+    for (manual.updates._0.items) |update| {
         if (updateIsLegal(u64, manual.rules, update.items)) {
             continue;
         }
@@ -95,7 +95,7 @@ fn SafetyManual(comptime T: type) type {
             }
 
             // Parse the block of updates.
-            var updates: utils.GridUnmanaged(T) = .{ .inner = .empty };
+            var updates: utils.GridUnmanaged(T) = .{ ._0 = .empty };
             errdefer updates.deinit(alloc);
 
             while (lines.next()) |line| {
@@ -110,7 +110,7 @@ fn SafetyManual(comptime T: type) type {
                     try buffer.append(alloc, val);
                 }
 
-                try updates.inner.append(alloc, buffer);
+                try updates._0.append(alloc, buffer);
             }
 
             return .{ .rules = rules, .updates = updates };
@@ -140,7 +140,7 @@ test "SafetyManual.parse" {
     // Populate a safety manual with the above rules and updates.
     var expected: SafetyManual(Int) = .{
         .rules = .empty,
-        .updates = .{ .inner = .empty },
+        .updates = .{ ._0 = .empty },
     };
     defer expected.deinit(alloc);
 
@@ -151,7 +151,7 @@ test "SafetyManual.parse" {
         var list: std.ArrayListUnmanaged(Int) = .empty;
         try list.appendSlice(alloc, update);
         errdefer list.deinit(alloc);
-        try expected.updates.inner.append(alloc, list);
+        try expected.updates._0.append(alloc, list);
     }
 
     // Parse the same safety manual from our example string.
@@ -165,8 +165,8 @@ test "SafetyManual.parse" {
         try std.testing.expect(actual.rules.contains(key.*));
     }
 
-    const expected_items = expected.updates.inner.items;
-    const actual_items = actual.updates.inner.items;
+    const expected_items = expected.updates._0.items;
+    const actual_items = actual.updates._0.items;
     try std.testing.expectEqual(expected_items.len, actual_items.len);
     for (expected_items, actual_items) |exp, act| {
         try std.testing.expectEqualSlices(Int, exp.items, act.items);
@@ -263,8 +263,8 @@ test updateIsLegal {
     var manual = try SafetyManual(u32).parse(alloc, example_manual);
     defer manual.deinit(alloc);
 
-    try std.testing.expectEqual(legality.len, manual.updates.inner.items.len);
-    for (legality, manual.updates.inner.items) |expected, update| {
+    try std.testing.expectEqual(legality.len, manual.updates._0.items.len);
+    for (legality, manual.updates._0.items) |expected, update| {
         const actual = updateIsLegal(u32, manual.rules, update.items);
         try std.testing.expectEqual(expected, actual);
     }
