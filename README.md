@@ -14,24 +14,24 @@ The languages for each year are as follows:
 
 ## 2024  - Zig
 
-This year has been quite interesting using Zig v0.14. Unlike with Haskell
-and Rust, there's not such an established package ecosystem or mature
-package manager. So we've stuck to the standard library exclusively.
+This year has been quite interesting using Zig (version 0.15). Unlike
+with Haskell and Rust, there's not such an established package ecosystem or
+mature package manager. So we've stuck to the standard library exclusively.
 
 ### Usage
 
 Simply `git clone github.com/lawbel/advent-of-code` and `cd 2024` to get a
 local copy of the 2024 folder. From there, the usual zig commands should work
-as expected. Note again that this project was built with Zig v0.14, so later
+as expected. Note again that this project was built with Zig v0.15, so other
 versions may require some changes to get working.
 
-* To run each day, do e.g. `zig build -Doptimize=ReleaseFast day-01` for
+* To run each day, do e.g. `zig build day-01 -Doptimize=ReleaseFast` for
   day 1. This will compile and then run the solution for day 1 in release
   mode, using the input file `./txt/day_01.txt`. There are other optimisation
   levels, most notably `-Doptimize=Debug` which is the default used if you
   omit the option and just run `zig build day-01`.
 * To run all days one after the other,
-  do `zig build -Doptimize=ReleaseFast all`.
+  do `zig build all -Doptimize=ReleaseFast`.
 * To build the whole project run `zig build -Doptimize=ReleaseFast`. This
   will install many executables into `./zig-out/bin` - one for each day and
   one called 'all' that runs every day in order. Note that these executables
@@ -48,29 +48,19 @@ versions may require some changes to get working.
 
 ### Usage - Nix
 
-There is a setup with nix flakes, so it should be possible to do e.g.
+Start again with `git clone github.com/lawbel/advent-of-code` and `cd 2024`
+to get a local copy of the repo. From there:
 
-```sh
-nix run 'github:lawbel/advent-of-code?dir=2024#day-01'
-```
-
-to quickly try out day 1 as long as you have [nix][nix] installed. This
-command will fetch, compile, and run the code for day 1 using our
-input files.
-
-For anything more involved, best to start
-with `git clone github.com/lawbel/advent-of-code` and `cd 2024` to get a
-local copy of the repo. From there:
-
-* There is a `.envrc` file that will use [direnv][direnv] (or more
-  specifically [nix-direnv][nix-direnv]) to evaluate the nix 'devShell'
-  and add `zig` and `zls` of appropriate versions to your local environment
-  whenever you `cd` into the 2024 folder.
-* Alternatively to relying on direnv, a dev shell can be entered directly by
-  doing `nix shell`. Again, this will create a local environment with
-  executables for Zig and ZLS added into it.
-* Running `nix build` will install executables into `./result/bin`, one for
-  each day and one called 'all' that runs all days one after the other.
+* To get a copy of Zig and ZLS of appropriate versions, run `nix develop`.
+  This will drop you into the nix 'devShell', a bash shell with `zig`
+  and `zls` executables added into the environment. To use other shells,
+  run e.g. `nix develop --command fish` instead.
+* There is also a `.envrc` file that will use [direnv][direnv] (or more
+  specifically [nix-direnv][nix-direnv]) to enter this dev-shell
+  automatically upon `cd`-ing into the 2024 folder, and exit the dev shell
+  on leaving the folder.
+* Running `nix build` will install executables into `./result/bin`: one for
+  each day, and one called 'all' that runs all days one after the other.
   Like the non-nix usage, these executables expect to get their input file
   communicated over environment variables. So to use them directly do
   something like the following:
@@ -81,6 +71,5 @@ local copy of the repo. From there:
   environment variables, which can be handy.
 
 [aoc]: https://adventofcode.com/
-[nix]: https://nixos.org/
 [direnv]: https://direnv.net/
 [nix-direnv]: https://github.com/nix-community/nix-direnv

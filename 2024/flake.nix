@@ -3,8 +3,15 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    zig.url = "github:cloudef/zig2nix";
-    zls.url = "github:zigtools/zls";
+    zig = {
+      url = "github:mitchellh/zig-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    zls = {
+      url = "github:zigtools/zls/0.15.1";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.zig-overlay.follows = "zig";
+    };
   };
 
   outputs = {
@@ -17,7 +24,7 @@
     name = "advent_2024";
     pkgs = import nixpkgs {inherit system;};
     lib = pkgs.lib;
-    zig-exe = zig.packages.${system}."zig-0_14_0";
+    zig-exe = zig.packages.${system}."0.15.1";
     zls-exe = zls.packages.${system}.zls;
 
     dayNums = builtins.genList (i: i + 1) 9;

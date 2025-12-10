@@ -14,7 +14,10 @@ const utils = @import("utils.zig");
 /// Run each day, one after the other.
 pub fn main() !void {
     const alloc = std.heap.smp_allocator;
-    const stdout = std.io.getStdOut().writer();
+
+    var buffer: [1024]u8 = undefined;
+    var writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &writer.interface;
 
     const Day = struct { part1: utils.PartFn, part2: utils.PartFn };
     const days = [_]@TypeOf(Day){
@@ -31,8 +34,13 @@ pub fn main() !void {
 
         if (n > 1) try stdout.print("\n", .{});
         try stdout.print("day {d}:\n", .{n});
+        try stdout.flush();
+
         try stdout.print("  part 1: {d}\n", .{try day.part1(alloc, text)});
+        try stdout.flush();
+
         try stdout.print("  part 2: {d}\n", .{try day.part2(alloc, text)});
+        try stdout.flush();
     }
 }
 

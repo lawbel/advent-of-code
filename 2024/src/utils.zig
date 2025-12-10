@@ -8,12 +8,19 @@ pub const PartFn = fn (std.mem.Allocator, []const u8) anyerror!u64;
 /// Run both parts for the given day.
 pub fn mainDay(comptime day: u8, part1: PartFn, part2: PartFn) !void {
     const alloc = std.heap.smp_allocator;
-    const stdout = std.io.getStdOut().writer();
+
+    var buffer: [1024]u8 = undefined;
+    var writer = std.fs.File.stdout().writer(&buffer);
+    const stdout = &writer.interface;
+
     const text = try getInputFile(alloc, day);
     defer alloc.free(text);
 
     try stdout.print("part 1: {d}\n", .{try part1(alloc, text)});
+    try stdout.flush();
+
     try stdout.print("part 2: {d}\n", .{try part2(alloc, text)});
+    try stdout.flush();
 }
 
 /// The max size of an input file in bytes.
