@@ -8,6 +8,7 @@ const day_06 = @import("day_06.zig");
 const day_07 = @import("day_07.zig");
 const day_08 = @import("day_08.zig");
 const day_09 = @import("day_09.zig");
+const day_10 = @import("day_10.zig");
 const std = @import("std");
 const utils = @import("utils.zig");
 
@@ -22,7 +23,7 @@ pub fn main() !void {
     const Day = struct { part1: utils.PartFn, part2: utils.PartFn };
     const days = [_]@TypeOf(Day){
         day_01, day_02, day_03, day_04, day_05,
-        day_06, day_07, day_08, day_09,
+        day_06, day_07, day_08, day_09, day_10,
     };
 
     // Thanks to the above, we can save most of the repetition in running
@@ -49,6 +50,6 @@ pub fn main() !void {
 test "all" {
     _ = .{
         day_01, day_02, day_03, day_04, day_05,
-        day_06, day_07, day_08, day_09,
+        day_06, day_07, day_08, day_09, day_10,
     };
 }
