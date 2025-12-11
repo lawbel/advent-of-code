@@ -32,6 +32,7 @@ pub fn build(b: *std.Build) void {
 
         const run = b.addRunArtifact(exe);
         run.step.dependOn(&exe.step);
+        if (b.args) |args| run.addArgs(args);
         inline for (days) |n| {
             const env = std.fmt.comptimePrint("ZIG_AOC_DAY_{d:0>2}", .{n});
             const txt = std.fmt.comptimePrint("txt/day_{d:0>2}.txt", .{n});
@@ -80,6 +81,7 @@ pub fn build(b: *std.Build) void {
             const run = b.addRunArtifact(exe);
             run.step.dependOn(&exe.step);
             run.setEnvironmentVariable(env, path);
+            if (b.args) |args| run.addArgs(args);
 
             break :step &run.step;
         });
