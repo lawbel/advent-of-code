@@ -1,0 +1,12 @@
+.{
+    .name = .advent_2025,
+    .version = "0.0.1",
+    .minimum_zig_version = "0.15.1",
+    .fingerprint = 0xd902d03a43df08c,
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "txt",
+    },
+}

@@ -1,0 +1,9 @@
+# Direnv cache.
+.direnv/
+
+# Zig build artefacts.
+.zig-cache/
+zig-out/
+
+# Nix build artefacts.
+result
