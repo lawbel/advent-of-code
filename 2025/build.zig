@@ -10,7 +10,7 @@ pub fn build(b: *std.Build) void {
     // For each day in `days = [_]u8{ 1, 2, ..., max }`, we will hook up a
     // standalone executable and test suite.
     const days = comptime init: {
-        const max = 1;
+        const max = 2;
         var list: [max]u8 = undefined;
         for (&list, 1..) |*day, n| day.* = n;
         break :init list;

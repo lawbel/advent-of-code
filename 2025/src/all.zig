@@ -1,5 +1,6 @@
 //! Convenience module for running/testing all days.
 const day_01 = @import("day_01.zig");
+const day_02 = @import("day_02.zig");
 const std = @import("std");
 const utils = @import("utils.zig");
 
@@ -8,7 +9,7 @@ const Day = struct { main: fn () anyerror!void };
 
 /// A collection of each day we have implemented.
 const days = [_]@TypeOf(Day){
-    day_01,
+    day_01, day_02,
 };
 
 /// Run each day, one after the other.

@@ -27,7 +27,8 @@
     zig-exe = zig.packages.${system}."0.15.1";
     zls-exe = zls.packages.${system}.zls;
 
-    dayNums = builtins.genList (i: i + 1) 1;
+    max = 2;
+    dayNums = builtins.genList (i: i + 1) max;
     dayStrs = builtins.map (lib.strings.fixedWidthNumber 2) dayNums;
 
     mkShellApp = sys: name: build: exports: {
