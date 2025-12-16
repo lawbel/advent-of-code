@@ -27,7 +27,7 @@
     zig-exe = zig.packages.${system}."0.15.1";
     zls-exe = zls.packages.${system}.zls;
 
-    max = 2;
+    max = 3;
     dayNums = builtins.genList (i: i + 1) max;
     dayStrs = builtins.map (lib.strings.fixedWidthNumber 2) dayNums;
 
