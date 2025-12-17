@@ -17,18 +17,10 @@ pub fn main() !void {
 /// what is the total output joltage?
 pub fn part1(input: []const u8) !u64 {
     var total: u64 = 0;
-    var banks = Banks.from(input);
+    var banks: Banks = .from(input);
 
     while (banks.next()) |bank| {
-        const one_pos = std.mem.indexOfMax(u8, bank[0 .. bank.len - 1]);
-        const one_char = bank[one_pos];
-        const two_char = std.mem.max(u8, bank[one_pos + 1 ..]);
-
-        const one = try std.fmt.charToDigit(one_char, 10);
-        const two = try std.fmt.charToDigit(two_char, 10);
-        const joltage = (10 * one) + two;
-
-        total += joltage;
+        total += try joltage(2, bank);
     } else |err| switch (err) {
         error.EndOfInput => {},
         else => return err,
@@ -42,10 +34,51 @@ test part1 {
     try std.testing.expectEqual(357, result);
 }
 
-/// Day 3, part 2 - [...].
+/// Day 3, part 2 - what is the new total output joltage?
 pub fn part2(input: []const u8) !u64 {
-    _ = input;
-    return 0;
+    var total: u64 = 0;
+    var banks: Banks = .from(input);
+
+    while (banks.next()) |bank| {
+        total += try joltage(12, bank);
+    } else |err| switch (err) {
+        error.EndOfInput => {},
+        else => return err,
+    }
+
+    return total;
+}
+
+test part2 {
+    const result = try part2(example);
+    try std.testing.expectEqual(3121910778619, result);
+}
+
+/// Calculate the largest joltage achievable from the given battery bank by
+/// turning on the given number of batteries.
+fn joltage(batteries: usize, bank: []const u8) !u64 {
+    var jolts: u64 = 0;
+    var start: usize = 0;
+
+    for (0..batteries) |i| {
+        // The best choice is simply the largest digit, preferring earlier
+        // digits in case of a tie. We must take care to leave enough room
+        // at the end of the bank for any remaining choices.
+        const stop: usize = bank.len - batteries + i + 1;
+        const offset = std.mem.indexOfMax(u8, bank[start..stop]);
+
+        // Now read that digit as an integer, shift it over to the right
+        // 'tens' place, and add it to jolts to set that digit. Don't forget
+        // to bump `start` ready for the next iteration in the loop.
+        const char = bank[start + offset];
+        const digit = try std.fmt.charToDigit(char, 10);
+        const tens = digit * std.math.pow(u64, 10, batteries - i - 1);
+
+        start += offset + 1;
+        jolts += tens;
+    }
+
+    return jolts;
 }
 
 /// Iterates over a collection of battery banks.
