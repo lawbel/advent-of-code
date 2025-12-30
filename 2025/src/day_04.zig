@@ -61,8 +61,8 @@ test part2 {
 pub fn accessible(
     alloc: std.mem.Allocator,
     grid: Grid,
-) !std.ArrayListUnmanaged(Point) {
-    var list: std.ArrayListUnmanaged(Point) = .empty;
+) !std.ArrayList(Point) {
+    var list: std.ArrayList(Point) = .empty;
     errdefer list.deinit(alloc);
 
     const height = grid._0.items.len;
@@ -122,7 +122,7 @@ const Point = struct { x: usize, y: usize };
 
 /// A rectangular grid of characters (`u8`s).
 const Grid = struct {
-    _0: std.ArrayListUnmanaged(std.ArrayListUnmanaged(u8)),
+    _0: std.ArrayList(std.ArrayList(u8)),
 
     const Self = @This();
 
@@ -131,8 +131,7 @@ const Grid = struct {
     /// one-or-more lines, and that each line will have the same length.
     /// Any empty lines will be skipped.
     fn parse(alloc: std.mem.Allocator, text: []const u8) !Self {
-        const Inner = std.ArrayListUnmanaged(std.ArrayListUnmanaged(u8));
-        var self: Self = .{ ._0 = Inner.empty };
+        var self: Self = .{ ._0 = .empty };
         errdefer self.deinit(alloc);
 
         var lines = std.mem.tokenizeScalar(u8, text, '\n');
@@ -142,7 +141,7 @@ const Grid = struct {
 
         while (lines.next()) |line| {
             if (line.len != width) return error.UnevenLines;
-            var list: std.ArrayListUnmanaged(u8) = .empty;
+            var list: std.ArrayList(u8) = .empty;
             try list.appendSlice(alloc, line);
             try self._0.append(alloc, list);
         }
