@@ -10,7 +10,7 @@ pub fn main() !void {
     try runDay(
         .{ .day = 5 },
         .{ part1, Alloc, Input },
-        .{ part2, Input },
+        .{ part2, Alloc, Input },
     );
 }
 
@@ -37,10 +37,26 @@ test part1 {
     try std.testing.expectEqual(3, part1(alloc, example));
 }
 
-/// Day 5, part 2 - [...]
-pub fn part2(input: []const u8) !u64 {
-    _ = input;
-    return 0;
+/// Day 5, part 2 - how many ingredient IDs are considered to be fresh
+/// according to the fresh ingredient ID ranges?
+pub fn part2(alloc: std.mem.Allocator, input: []const u8) !u64 {
+    var ingredients = try Ingredients.parse(alloc, input);
+    defer ingredients.deinit(alloc);
+
+    ingredients.fresh.compact();
+    ingredients.fresh.sort();
+
+    var fresh: u64 = 0;
+    for (ingredients.fresh._0.items) |range| {
+        fresh += range.max - range.min + 1;
+    }
+
+    return fresh;
+}
+
+test part2 {
+    const alloc = std.testing.allocator;
+    try std.testing.expectEqual(14, part2(alloc, example));
 }
 
 /// A range (inclusive) of integers `[min, max]`.
@@ -83,7 +99,7 @@ const Range = struct {
     }
 
     /// Returns `.eq` if `value` is within the range, `.lt` if it's to the
-    /// left and `gt` if it's off to the right. This function is suitable for
+    /// left and `.gt` if it's off to the right. This function is suitable for
     /// use with search methods such as `std.sort.binarySearch`.
     fn compare(value: u64, self: Self) std.math.Order {
         if (value < self.min) {
