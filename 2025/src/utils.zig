@@ -52,7 +52,7 @@ pub fn runDay(
     defer opts.alloc.free(input);
 
     inline for (.{ part1, part2 }, 1..) |part, num| {
-        const Args = try ArgTuple(part);
+        const Args = ArgTuple(part);
         var args: Args = undefined;
         inline for (0..@typeInfo(Args).@"struct".fields.len) |i| {
             args[i] = switch (part[i + 1]) {
@@ -75,7 +75,7 @@ pub fn runDay(
 /// as a tuple `.{Arg1Type, Arg2Type, ...}`. If any argument is one of the
 /// placeholder types `Input` or `Alloc`, we'll set the type of those
 /// arguments as `[]const u8` and `std.mem.Allocator` instead.
-fn ArgTuple(part: anytype) !type {
+fn ArgTuple(part: anytype) type {
     const Type = @TypeOf(part);
     const info = @typeInfo(Type);
     if (info != .@"struct" or !info.@"struct".is_tuple) {
