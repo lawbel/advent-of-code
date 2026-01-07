@@ -55,11 +55,14 @@ pub fn runDay(
         const Args = ArgTuple(part);
         var args: Args = undefined;
         inline for (0..@typeInfo(Args).@"struct".fields.len) |i| {
-            args[i] = switch (part[i + 1]) {
-                Alloc => opts.alloc,
-                Input => input,
-                else => |val| val,
-            };
+            const item = part[i + 1];
+            args[i] =
+                if (@TypeOf(item) == type and item == Input)
+                    input
+                else if (@TypeOf(item) == type and item == Alloc)
+                    opts.alloc
+                else
+                    item;
         }
 
         const fun = part[0];
@@ -85,11 +88,15 @@ fn ArgTuple(part: anytype) type {
     const count = info.@"struct".fields.len - 1;
     var fields: [count]std.builtin.Type.StructField = undefined;
     inline for (&fields, 1..) |*field, i| {
-        const New = switch (part[i]) {
-            Input => []const u8,
-            Alloc => std.mem.Allocator,
-            else => |orig| @TypeOf(orig),
-        };
+        const fn_info = @typeInfo(@TypeOf(part[0])).@"fn";
+        const New: type =
+            if (@TypeOf(part[i]) == type and part[i] == Input)
+                []const u8
+            else if (@TypeOf(part[i]) == type and part[i] == Alloc)
+                std.mem.Allocator
+            else
+                fn_info.params[i - 1].type.?;
+
         field.* = .{
             .name = std.fmt.comptimePrint("{d}", .{i - 1}),
             .type = New,
@@ -107,6 +114,16 @@ fn ArgTuple(part: anytype) type {
             .decls = &.{},
         },
     });
+}
+
+test ArgTuple {
+    const FnType = fn (std.mem.Allocator, u8, bool, []const u8) void;
+    const dummyFn: FnType = undefined;
+
+    try std.testing.expectEqual(
+        struct { std.mem.Allocator, u8, bool, []const u8 },
+        ArgTuple(.{ dummyFn, Alloc, 'x', true, Input }),
+    );
 }
 
 /// The max size of an input file.

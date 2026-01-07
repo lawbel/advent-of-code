@@ -35,4 +35,5 @@ pub fn main() !void {
 
 test "all" {
     _ = days;
+_ = utils;
 }
