@@ -6,6 +6,7 @@ const day_04 = @import("day_04.zig");
 const day_05 = @import("day_05.zig");
 const day_06 = @import("day_06.zig");
 const day_07 = @import("day_07.zig");
+const day_08 = @import("day_08.zig");
 const std = @import("std");
 const utils = @import("utils.zig");
 
@@ -15,7 +16,7 @@ const Day = struct { main: fn () anyerror!void };
 /// A collection of each day we have implemented.
 const days = [_]@TypeOf(Day){
     day_01, day_02, day_03, day_04,
-    day_05, day_06, day_07,
+    day_05, day_06, day_07, day_08,
 };
 
 /// Run each day, one after the other.
@@ -35,5 +36,5 @@ pub fn main() !void {
 
 test "all" {
     _ = days;
-_ = utils;
+    _ = utils;
 }
