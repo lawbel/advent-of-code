@@ -18,8 +18,6 @@ pub fn main() !void {
 /// three largest circuits?
 pub fn part1(alloc: std.mem.Allocator, input: []const u8, limit: usize) !u64 {
     const T: type = i64;
-    const top: usize = 3;
-
     var points = try Point(T).parseMany(alloc, input);
     defer points.deinit(alloc);
 
@@ -30,7 +28,7 @@ pub fn part1(alloc: std.mem.Allocator, input: []const u8, limit: usize) !u64 {
 
     try circuits.addPoints(alloc, points.items);
     try circuits.connect(alloc, pairs.items);
-    return circuits.multiplyLargest(alloc, top);
+    return circuits.multiplyLargest(alloc, 3);
 }
 
 test part1 {
@@ -39,11 +37,36 @@ test part1 {
 }
 
 /// Day 8, part 2 - [...]
-pub fn part2(alloc: std.mem.Allocator, input: []const u8) !u64 {
-    _ = alloc;
-    _ = input;
+pub fn part2(alloc: std.mem.Allocator, input: []const u8) !i64 {
+    const T: type = i64;
+    var points = try Point(T).parseMany(alloc, input);
+    defer points.deinit(alloc);
 
-    return 0;
+    var pairs: std.ArrayList(Pair(T)) = .empty;
+    defer pairs.deinit(alloc);
+    for (points.items, 0..) |one, i| {
+        for (points.items[0..i]) |two| {
+            try pairs.append(alloc, .{ .l = one, .r = two });
+        }
+    }
+    std.sort.heap(Pair(T), pairs.items, {}, Pair(T).lessThan);
+
+    var circuits: Circuits(T) = .empty;
+    defer circuits.deinit(alloc);
+
+    try circuits.addPoints(alloc, points.items);
+    const last: Pair(T) =
+        for (pairs.items) |pair| {
+            try circuits.connect(alloc, &.{pair});
+            if (circuits.fullyConnected()) break pair;
+        } else return error.CannotFullyConnect;
+
+    return last.l.x * last.r.x;
+}
+
+test part2 {
+    const alloc = std.testing.allocator;
+    try std.testing.expectEqual(25272, part2(alloc, example));
 }
 
 /// Given a collection of points, which `n` pairs are closest together?
@@ -59,10 +82,9 @@ fn closestPairs(
 
     var max: T = 0;
     for (points, 0..) |one, i| {
-        if (i + 1 >= points.len) continue;
-        for (points[i + 1 ..]) |two| {
+        for (points[0..i]) |two| {
             const pair: Pair(T) = .{ .l = one, .r = two };
-            const quad: T = pair.l.quadrance(pair.r);
+            const quad: T = pair.quadrance();
 
             if (closest.count() < n) {
                 try closest.add(pair);
@@ -70,8 +92,7 @@ fn closestPairs(
             } else if (quad < max) {
                 _ = closest.remove();
                 try closest.add(pair);
-                const new = closest.peek().?;
-                max = new.l.quadrance(new.r);
+                max = closest.peek().?.quadrance();
             }
         }
     }
@@ -95,8 +116,7 @@ test closestPairs {
         var expected: std.ArrayList(Pair(T)) = .empty;
         defer expected.deinit(alloc);
         for (points, 0..) |one, i| {
-            if (i + 1 >= points.len) continue;
-            for (points[i + 1 ..]) |two| {
+            for (points[0..i]) |two| {
                 try expected.append(alloc, .{ .l = one, .r = two });
             }
         }
@@ -174,6 +194,11 @@ fn Circuits(comptime T: type) type {
 
             return total;
         }
+
+        /// Are the circuits fully connected?
+        fn fullyConnected(self: *Self) bool {
+            return self.connections.fullyMerged();
+        }
     };
 }
 
@@ -224,7 +249,7 @@ fn DisjointSet(comptime T: type) type {
             return self.getId(value) orelse self.makeSet(alloc, value);
         }
 
-        /// Find the root ID of the entry of ID `index`.
+        /// Find the root ID of the node with given ID `index`.
         fn findId(self: *Self, index: usize) usize {
             const parent: *usize = &self.nodes.items[index].parent;
             if (parent.* != index) parent.* = self.findId(parent.*);
@@ -282,6 +307,17 @@ fn DisjointSet(comptime T: type) type {
             const nodes: []Node = self.nodes.items;
             return nodes[one].size > nodes[two].size;
         }
+
+        /// Are the sets fully merged? In other words, are all items in this
+        /// collection connected to each other in one big disjoint set?
+        fn fullyMerged(self: *Self) bool {
+            const size = self.ids.entries.len;
+            if (size == 0) return true;
+
+            const entry = self.ids.entries.get(0);
+            const root = self.findId(entry.value);
+            return self.nodes.items[root].size == size;
+        }
     };
 }
 
@@ -327,16 +363,19 @@ fn Pair(comptime T: type) type {
 
         /// Flipped 'compare' operator. Suitable for a max priority queue.
         fn compare(_: void, self: Self, other: Self) std.math.Order {
-            return std.math.order(
-                other.l.quadrance(other.r),
-                self.l.quadrance(self.r),
-            );
+            return std.math.order(other.quadrance(), self.quadrance());
+        }
+
+        /// Gets the quadrance between the two points, the square of the
+        /// distance between them.
+        fn quadrance(self: Self) T {
+            return self.l.quadrance(self.r);
         }
 
         /// Is the element at index `one` greater than that at index `two`?
         /// Suitable for use with sorting methods such as `std.sort.insertion`.
         fn lessThan(_: void, one: Self, two: Self) bool {
-            return one.l.quadrance(one.r) < two.l.quadrance(two.r);
+            return one.quadrance() < two.quadrance();
         }
     };
 }
@@ -401,16 +440,26 @@ fn Point(comptime T: type) type {
 test "Point.parseMany" {
     const alloc = std.testing.allocator;
     const expected = [_]Point(u32){
-        .from(.{ 162, 817, 812 }), .from(.{ 57, 618, 57 }),
-        .from(.{ 906, 360, 560 }), .from(.{ 592, 479, 940 }),
-        .from(.{ 352, 342, 300 }), .from(.{ 466, 668, 158 }),
-        .from(.{ 542, 29, 236 }),  .from(.{ 431, 825, 988 }),
-        .from(.{ 739, 650, 466 }), .from(.{ 52, 470, 668 }),
-        .from(.{ 216, 146, 977 }), .from(.{ 819, 987, 18 }),
-        .from(.{ 117, 168, 530 }), .from(.{ 805, 96, 715 }),
-        .from(.{ 346, 949, 466 }), .from(.{ 970, 615, 88 }),
-        .from(.{ 941, 993, 340 }), .from(.{ 862, 61, 35 }),
-        .from(.{ 984, 92, 344 }),  .from(.{ 425, 690, 689 }),
+        .from(.{ 162, 817, 812 }),
+        .from(.{ 57, 618, 57 }),
+        .from(.{ 906, 360, 560 }),
+        .from(.{ 592, 479, 940 }),
+        .from(.{ 352, 342, 300 }),
+        .from(.{ 466, 668, 158 }),
+        .from(.{ 542, 29, 236 }),
+        .from(.{ 431, 825, 988 }),
+        .from(.{ 739, 650, 466 }),
+        .from(.{ 52, 470, 668 }),
+        .from(.{ 216, 146, 977 }),
+        .from(.{ 819, 987, 18 }),
+        .from(.{ 117, 168, 530 }),
+        .from(.{ 805, 96, 715 }),
+        .from(.{ 346, 949, 466 }),
+        .from(.{ 970, 615, 88 }),
+        .from(.{ 941, 993, 340 }),
+        .from(.{ 862, 61, 35 }),
+        .from(.{ 984, 92, 344 }),
+        .from(.{ 425, 690, 689 }),
     };
 
     var actual = try Point(u32).parseMany(alloc, example);
